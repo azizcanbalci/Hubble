@@ -1,7 +1,5 @@
 <h1 align="center">✨ Chat & Video Calling ✨</h1>
 
-![Demo App]()
-
 Highlights:
 
 - 💬 Real-time Messaging with Threads, Reactions & Pinned Messages
