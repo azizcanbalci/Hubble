@@ -54,7 +54,7 @@ const HomePage = () => {
               <div className="team-channel-list__header gap-4">
                 <div className="brand-container">
                   <img src="/logo.png" alt="Logo" className="brand-logo" />
-                  <span className="brand-name">Slap</span>
+                  <span className="brand-name">Hubble</span>
                 </div>
                 <div className="user-button-wrapper">
                   <UserButton />
@@ -63,7 +63,10 @@ const HomePage = () => {
               {/* CHANNELS LIST */}
               <div className="team-channel-list__content">
                 <div className="create-channel-section">
-                  <button onClick={() => setIsCreateModalOpen(true)} className="create-channel-btn">
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="create-channel-btn"
+                  >
                     <PlusIcon className="size-4" />
                     <span>Create Channel</span>
                   </button>
@@ -77,7 +80,9 @@ const HomePage = () => {
                     <CustomChannelPreview
                       channel={channel}
                       activeChannel={activeChannel}
-                      setActiveChannel={(channel) => setSearchParams({ channel: channel.id })}
+                      setActiveChannel={(channel) =>
+                        setSearchParams({ channel: channel.id })
+                      }
                     />
                   )}
                   List={({ children, loading, error }) => (
@@ -90,8 +95,16 @@ const HomePage = () => {
                       </div>
 
                       {/* todos: add better components here instead of just a simple text  */}
-                      {loading && <div className="loading-message">Loading channels...</div>}
-                      {error && <div className="error-message">Error loading channels</div>}
+                      {loading && (
+                        <div className="loading-message">
+                          Loading channels...
+                        </div>
+                      )}
+                      {error && (
+                        <div className="error-message">
+                          Error loading channels
+                        </div>
+                      )}
 
                       <div className="channels-list">{children}</div>
 
@@ -123,7 +136,9 @@ const HomePage = () => {
           </div>
         </div>
 
-        {isCreateModalOpen && <CreateChannelModal onClose={() => setIsCreateModalOpen(false)} />}
+        {isCreateModalOpen && (
+          <CreateChannelModal onClose={() => setIsCreateModalOpen(false)} />
+        )}
       </Chat>
     </div>
   );
