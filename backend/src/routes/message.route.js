@@ -10,6 +10,7 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.get("/:channelId", protectRoute, getMessagesByChannel);
+router.post("/sync", protectRoute, storeStreamMessage);
 
 export default router;
 

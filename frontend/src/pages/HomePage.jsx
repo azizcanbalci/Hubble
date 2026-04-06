@@ -2,6 +2,7 @@ import { UserButton } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useStreamChat } from "../hooks/useStreamChat";
+import { syncMessageToMongo } from "../lib/api";
 import PageLoader from "../components/PageLoader";
 
 import {
@@ -38,6 +39,33 @@ const HomePage = () => {
       }
     }
   }, [chatClient, searchParams]);
+
+  useEffect(() => {
+    if (!chatClient) return;
+
+    const subscription = chatClient.on((event) => {
+      if (event.type !== "message.new" || !event.message) return;
+
+      // Persist messages created by the signed-in user in MongoDB.
+      if (event.message.user?.id !== chatClient.userID) return;
+
+      const [channelType, channelId] = (event.cid || "messaging:").split(":");
+
+      syncMessageToMongo({
+        message: event.message,
+        channel: {
+          id: channelId,
+          type: channelType || "messaging",
+        },
+      }).catch((error) => {
+        console.error("Mongo sync failed for message.new event", error);
+      });
+    });
+
+    return () => {
+      subscription?.unsubscribe?.();
+    };
+  }, [chatClient]);
 
   // todo: handle this with a better component
   if (error) return <p>Something went wrong...</p>;
