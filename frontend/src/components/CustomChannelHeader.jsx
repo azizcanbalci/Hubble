@@ -5,16 +5,22 @@ import {
   PinIcon,
   VideoIcon,
   BrainIcon,
+  SearchIcon,
 } from "lucide-react";
-import { useChannelStateContext } from "stream-chat-react";
-import { useState } from "react";
+import {
+  useChannelActionContext,
+  useChannelStateContext,
+} from "stream-chat-react";
+import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import MembersModal from "./MembersModal";
 import PinnedMessagesModal from "./PinnedMessagesModal";
 import InviteModal from "./InviteModal";
+import ChannelSearchModal from "./ChannelSearchModal";
 
 const CustomChannelHeader = () => {
   const { channel } = useChannelStateContext();
+  const { jumpToMessage } = useChannelActionContext();
   const { user } = useUser();
 
   const memberCount = Object.keys(channel.state.members).length;
@@ -23,6 +29,7 @@ const CustomChannelHeader = () => {
   const [showMembers, setShowMembers] = useState(false);
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [showSearch, setShowSearch] = useState(false);
 
   const otherUser = Object.values(channel.state.members).find(
     (member) => member.user.id !== user.id,
@@ -45,6 +52,36 @@ const CustomChannelHeader = () => {
       });
     }
   };
+
+  const handleSelectSearchResult = (messageId) => {
+    if (!messageId) return;
+
+    if (typeof jumpToMessage === "function") {
+      jumpToMessage(messageId);
+    }
+  };
+
+  useEffect(() => {
+    const handleShortcut = (event) => {
+      const isSearchShortcut =
+        (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k";
+      if (!isSearchShortcut) return;
+
+      const tagName = (event.target?.tagName || "").toLowerCase();
+      const isTypingTarget =
+        tagName === "input" ||
+        tagName === "textarea" ||
+        event.target?.isContentEditable;
+
+      if (isTypingTarget) return;
+
+      event.preventDefault();
+      setShowSearch(true);
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   return (
     <div className="h-14 border-b border-gray-200 flex items-center px-4 justify-between bg-white">
@@ -92,6 +129,14 @@ const CustomChannelHeader = () => {
 
         <button
           className="hover:bg-[#F8F8F8] p-1 rounded"
+          onClick={() => setShowSearch(true)}
+          title="Search in Channel (Ctrl/Cmd + K)"
+        >
+          <SearchIcon className="size-5 text-[#616061]" />
+        </button>
+
+        <button
+          className="hover:bg-[#F8F8F8] p-1 rounded"
           onClick={handleVideoCall}
           title="Start Video Call"
         >
@@ -131,6 +176,19 @@ const CustomChannelHeader = () => {
 
       {showInvite && (
         <InviteModal channel={channel} onClose={() => setShowInvite(false)} />
+      )}
+
+      {showSearch && (
+        <ChannelSearchModal
+          channelId={channel.id}
+          channelName={
+            isDM
+              ? otherUser?.user?.name || otherUser?.user?.id
+              : channel.data?.id
+          }
+          onClose={() => setShowSearch(false)}
+          onSelectMessage={handleSelectSearchResult}
+        />
       )}
     </div>
   );

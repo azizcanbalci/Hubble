@@ -10,6 +10,13 @@ export async function getChannelMessages(channelId) {
   return response.data;
 }
 
+export async function searchChannelMessages(channelId, query) {
+  const response = await axiosInstance.get(`/messages/${channelId}/search`, {
+    params: { q: query },
+  });
+  return response.data;
+}
+
 export async function syncMessageToMongo(messagePayload) {
   const response = await axiosInstance.post("/messages/sync", messagePayload);
   return response.data;

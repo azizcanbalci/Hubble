@@ -111,3 +111,84 @@ export const getMessagesByChannel = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch messages" });
   }
 };
+
+const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const searchMessagesInChannel = async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const queryText = (req.query.q || "").trim();
+
+    if (!queryText) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const terms = Array.from(
+      new Set(
+        queryText
+          .split(/\s+/)
+          .map((term) => term.trim())
+          .filter(Boolean)
+      )
+    ).slice(0, 8);
+
+    const termRegexes = terms.map((term) => escapeRegex(term));
+    const phraseRegex = escapeRegex(queryText);
+
+    const scoreExpressions = [
+      {
+        $cond: [{ $regexMatch: { input: "$text", regex: phraseRegex, options: "i" } }, 8, 0],
+      },
+      ...termRegexes.map((regex) => ({
+        $cond: [{ $regexMatch: { input: "$text", regex, options: "i" } }, 2, 0],
+      })),
+    ];
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          channelId,
+          deletedAt: null,
+          text: { $type: "string", $ne: "" },
+        },
+      },
+      {
+        $addFields: {
+          score: {
+            $add: scoreExpressions,
+          },
+        },
+      },
+      {
+        $match: {
+          score: { $gt: 0 },
+        },
+      },
+      {
+        $sort: {
+          score: -1,
+          createdAt: -1,
+        },
+      },
+      {
+        $limit: 30,
+      },
+      {
+        $project: {
+          _id: 1,
+          streamMessageId: 1,
+          userId: 1,
+          userName: 1,
+          text: 1,
+          createdAt: 1,
+          score: 1,
+        },
+      },
+    ]);
+
+    return res.status(200).json({ messages });
+  } catch (error) {
+    console.error("Error searching channel messages:", error);
+    return res.status(500).json({ message: "Failed to search channel messages" });
+  }
+};

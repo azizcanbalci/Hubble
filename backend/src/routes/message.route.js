@@ -2,6 +2,7 @@ import express from "express";
 import {
   getMessagesByChannel,
   markStreamMessageDeleted,
+  searchMessagesInChannel,
   storeStreamMessage,
   syncStreamMessageUpdate,
 } from "../controllers/message.controller.js";
@@ -10,6 +11,7 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 router.get("/:channelId", protectRoute, getMessagesByChannel);
+router.get("/:channelId/search", protectRoute, searchMessagesInChannel);
 router.post("/sync", protectRoute, storeStreamMessage);
 
 export default router;
