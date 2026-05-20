@@ -1,0 +1,12 @@
+.call-page-shell .str-video__participant-view .str-video__participant-details {
+  background: rgba(0, 0, 0, 0.52) !important;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.call-page-shell .str-video__participant-view .str-video__participant-details .str-video__participant-details__name,
+.call-page-shell .str-video__participant-listing-item .str-video__participant-listing-item__display-name,
+.call-page-shell .str-video__livestream-layout__wrapper .str-video__livestream-layout__overlay .str-video__livestream-layout__speaker-name {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+}
