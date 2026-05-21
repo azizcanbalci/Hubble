@@ -41,3 +41,8 @@ export async function updateUserSettings(settings) {
   const response = await axiosInstance.patch("/chat/settings", { settings });
   return response.data;
 }
+
+export async function getCallRecordings(callId) {
+  const response = await axiosInstance.get(`/video/recordings/${callId}`);
+  return response.data;
+}

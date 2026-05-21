@@ -7,6 +7,7 @@ import {
   BrainIcon,
   SearchIcon,
   LoaderIcon,
+  FilmIcon,
 } from "lucide-react";
 import {
   useChannelActionContext,
@@ -19,6 +20,7 @@ import MembersModal from "./MembersModal";
 import PinnedMessagesModal from "./PinnedMessagesModal";
 import InviteModal from "./InviteModal";
 import ChannelSearchModal from "./ChannelSearchModal";
+import RecordingsPanel from "./RecordingsPanel";
 import { useAnalyze } from "../context/AnalyzeContext";
 
 const CustomChannelHeader = () => {
@@ -33,6 +35,7 @@ const CustomChannelHeader = () => {
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [showRecordings, setShowRecordings] = useState(false);
 
   const {
     analyzeMode,
@@ -139,6 +142,14 @@ const CustomChannelHeader = () => {
       </div>
 
       <div className="discord-chat-header__right">
+        <button
+          className="discord-header-btn"
+          onClick={() => setShowRecordings(true)}
+          title="Görüşme Kayıtları"
+        >
+          <FilmIcon className="size-4" />
+        </button>
+
         {sentimentAnalysisEnabled !== false && (
           analyzeMode ? (
             <>
@@ -250,6 +261,13 @@ const CustomChannelHeader = () => {
           }
           onClose={() => setShowSearch(false)}
           onSelectMessage={handleSelectSearchResult}
+        />
+      )}
+
+      {showRecordings && (
+        <RecordingsPanel
+          channelId={channel.id}
+          onClose={() => setShowRecordings(false)}
         />
       )}
     </div>
