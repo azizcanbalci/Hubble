@@ -1,7 +1,16 @@
 import { StreamChat } from "stream-chat";
+import { StreamClient } from "@stream-io/node-sdk";
 import { ENV } from "../config/env.js";
 
-const streamClient = StreamChat.getInstance(ENV.STREAM_API_KEY, ENV.STREAM_API_SECRET);
+export const streamClient = StreamChat.getInstance(ENV.STREAM_API_KEY, ENV.STREAM_API_SECRET);
+
+let _videoClient = null;
+export const getVideoClient = () => {
+  if (!_videoClient) {
+    _videoClient = new StreamClient(ENV.STREAM_API_KEY, ENV.STREAM_API_SECRET);
+  }
+  return _videoClient;
+};
 
 export const upsertStreamUser = async (userData) => {
   try {

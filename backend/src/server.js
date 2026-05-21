@@ -8,6 +8,7 @@ import { serve } from "inngest/express";
 import chatRoutes from "./routes/chat.route.js";
 import channelRoutes from "./routes/channel.route.js";
 import messageRoutes, { streamWebhookRouter } from "./routes/message.route.js";
+import videoRoutes from "./routes/video.route.js";
 
 import cors from "cors";
 
@@ -32,6 +33,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/webhooks/stream", streamWebhookRouter);
+app.use("/api/video", videoRoutes);
 
 Sentry.setupExpressErrorHandler(app);
 

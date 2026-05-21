@@ -36,6 +36,17 @@ export const useStreamChat = () => {
 
     const connect = async () => {
       try {
+        // Already connected as the same user — skip reconnection
+        if (client.userID === user.id) {
+          if (!cancelled) setChatClient(client);
+          return;
+        }
+
+        // Connected as a different user — disconnect first
+        if (client.userID) {
+          await client.disconnectUser();
+        }
+
         await client.connectUser(
           {
             id: user.id,
@@ -63,10 +74,11 @@ export const useStreamChat = () => {
 
     connect();
 
-    // cleanup
+    // Only cancel pending state updates on unmount — do NOT disconnect.
+    // The StreamChat singleton stays alive for the session; disconnecting
+    // on every route change breaks the connection when returning from CallPage.
     return () => {
       cancelled = true;
-      client.disconnectUser();
     };
   }, [tokenData?.token, user?.id]);
 

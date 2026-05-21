@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "@clerk/clerk-react";
@@ -10,23 +10,38 @@ import {
   StreamVideo,
   StreamVideoClient,
   StreamCall,
-  CallControls,
-  SpeakerLayout,
   StreamTheme,
   CallingState,
   useCallStateHooks,
+  useCall,
+  ParticipantView,
 } from "@stream-io/video-react-sdk";
-import { VideoIcon } from "lucide-react";
+
+import {
+  MicIcon,
+  MicOffIcon,
+  VideoIcon,
+  VideoOffIcon,
+  MonitorIcon,
+  MonitorOffIcon,
+  CircleIcon,
+  SquareIcon,
+  PhoneOffIcon,
+  LoaderIcon,
+  Maximize2Icon,
+  Minimize2Icon,
+  PinIcon,
+} from "lucide-react";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import "../styles/call-page.css";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
+/* ─── Page shell ─────────────────────────────────────────────── */
 const CallPage = () => {
   const { id: callId } = useParams();
   const { user, isLoaded } = useUser();
-
   const [client, setClient] = useState(null);
   const [call, setCall] = useState(null);
   const [isConnecting, setIsConnecting] = useState(true);
@@ -38,88 +53,285 @@ const CallPage = () => {
   });
 
   useEffect(() => {
-    const initCall = async () => {
-      if (!tokenData.token || !user || !callId) return;
+    if (!tokenData?.token || !user || !callId) return;
 
+    let videoClient = null;
+    let isMounted = true;
+
+    const initCall = async () => {
       try {
-        const videoClient = new StreamVideoClient({
+        videoClient = new StreamVideoClient({
           apiKey: STREAM_API_KEY,
-          user: {
-            id: user.id,
-            name: user.fullName,
-            image: user.imageUrl,
-          },
+          user: { id: user.id, name: user.fullName, image: user.imageUrl },
           token: tokenData.token,
         });
-
         const callInstance = videoClient.call("default", callId);
         await callInstance.join({ create: true });
-
+        if (!isMounted) {
+          await callInstance.leave();
+          return;
+        }
         setClient(videoClient);
         setCall(callInstance);
-      } catch (error) {
-        console.log("Error init call:", error);
-        toast.error("Cannot connect to the call.");
+      } catch (err) {
+        console.error(err);
+        if (isMounted) toast.error("Görüşmeye bağlanılamadı.");
       } finally {
-        setIsConnecting(false);
+        if (isMounted) setIsConnecting(false);
       }
     };
 
     initCall();
+    return () => {
+      isMounted = false;
+    };
   }, [tokenData, user, callId]);
 
   if (isConnecting || !isLoaded) {
     return (
-      <div className="call-page-shell relative flex h-screen items-center justify-center overflow-hidden bg-[#F3F5F9]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(42,157,143,0.25),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(38,70,83,0.22),transparent_42%),radial-gradient(circle_at_70%_80%,rgba(233,196,106,0.22),transparent_48%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(to_right,rgba(38,70,83,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(38,70,83,0.12)_1px,transparent_1px)] [background-size:48px_48px]" />
-        <div className="relative z-10 flex flex-col items-center gap-3 text-[#1F2937]">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/80 shadow-md ring-1 ring-[#264653]/20">
-            <VideoIcon className="size-7 animate-pulse text-[#1264A3]" />
-          </span>
-          <p className="text-base font-medium">Connecting to call...</p>
+      <div className="dc-shell dc-shell--loading">
+        <div className="dc-loading-card">
+          <VideoIcon className="dc-loading-icon" />
+          <p>Görüşmeye bağlanılıyor…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="call-page-shell relative flex h-screen flex-col items-center justify-center overflow-hidden bg-[#F3F5F9] px-4 py-6">
-      <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#2A9D8F]/30 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-24 h-80 w-80 rounded-full bg-[#264653]/25 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-120px] left-1/2 h-80 w-[38rem] -translate-x-1/2 rounded-full bg-[#E9C46A]/25 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 opacity-25 [background-image:linear-gradient(to_right,rgba(38,70,83,0.14)_1px,transparent_1px),linear-gradient(to_bottom,rgba(38,70,83,0.14)_1px,transparent_1px)] [background-size:52px_52px]" />
-
-      <div className="relative z-10 mx-auto w-full max-w-5xl">
-        {client && call ? (
-          <StreamVideo client={client}>
-            <StreamCall call={call}>
-              <CallContent />
-            </StreamCall>
-          </StreamVideo>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p>Could not initialize call. Please refresh or try again later</p>
-          </div>
-        )}
-      </div>
+    <div className="dc-shell">
+      {client && call ? (
+        <StreamVideo client={client}>
+          <StreamCall call={call}>
+            <CallContent />
+          </StreamCall>
+        </StreamVideo>
+      ) : (
+        <p className="dc-shell__error">
+          Bağlantı kurulamadı, lütfen sayfayı yenileyin.
+        </p>
+      )}
     </div>
   );
 };
 
+/* ─── Main call UI ───────────────────────────────────────────── */
 const CallContent = () => {
-  const { useCallCallingState } = useCallStateHooks();
-
-  const callingState = useCallCallingState();
+  const call = useCall();
+  const containerRef = useRef(null);
+  const [pinnedId, setPinnedId] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [recordLoading, setRecordLoading] = useState(false);
   const navigate = useNavigate();
 
-  if (callingState === CallingState.LEFT) return navigate("/");
+  const {
+    useCallCallingState,
+    useParticipants,
+    useMicrophoneState,
+    useCameraState,
+    useScreenShareState,
+    useIsCallRecordingInProgress,
+  } = useCallStateHooks();
+
+  const callingState = useCallCallingState();
+  const participants = useParticipants();
+  const { microphone, isMute: isMicMuted } = useMicrophoneState();
+  const { camera, isMute: isCamMuted } = useCameraState();
+  const { screenShare, isMute: isScreenShareOff } = useScreenShareState();
+  const isRecording = useIsCallRecordingInProgress();
+  const isScreenSharing = !isScreenShareOff;
+
+  /* navigate away when call ends — must be in useEffect, not render */
+  useEffect(() => {
+    if (callingState === CallingState.LEFT) {
+      navigate("/");
+    }
+  }, [callingState, navigate]);
+
+  /* fullscreen listener */
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  /* pin logic */
+  const pinned = pinnedId ? participants.find((p) => p.sessionId === pinnedId) : null;
+  const others = pinnedId ? participants.filter((p) => p.sessionId !== pinnedId) : [];
+
+  const togglePin = (sessionId) =>
+    setPinnedId((prev) => (prev === sessionId ? null : sessionId));
+
+  /* fullscreen */
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  /* recording */
+  const handleRecord = async () => {
+    setRecordLoading(true);
+    try {
+      if (isRecording) {
+        await call.stopRecording();
+        toast.success("Kayıt durduruldu");
+      } else {
+        await call.startRecording();
+        toast.success("Kayıt başlatıldı");
+      }
+    } catch {
+      toast.error("Kayıt işlemi başarısız");
+    } finally {
+      setRecordLoading(false);
+    }
+  };
+
+  /* screen share */
+  const handleScreenShare = async () => {
+    try {
+      await screenShare.toggle();
+    } catch {
+      toast.error("Ekran paylaşımı başlatılamadı");
+    }
+  };
+
+  /* grid class by count */
+  const gridClass = pinnedId
+    ? "dc-grid dc-grid--pinned"
+    : `dc-grid dc-grid--${Math.min(participants.length, 9)}`;
 
   return (
-    <StreamTheme>
-      <SpeakerLayout />
-      <CallControls />
-    </StreamTheme>
+    <div className="dc-call" ref={containerRef}>
+      {/* ── video area ── */}
+      <div className="dc-video-area">
+        <StreamTheme>
+          {pinnedId ? (
+            /* ── pinned mode ── */
+            <div className={gridClass}>
+              <div className="dc-tile dc-tile--main" onClick={() => togglePin(pinnedId)}>
+                {pinned && <ParticipantView participant={pinned} />}
+                <div className="dc-tile__unpin-hint">
+                  <PinIcon className="size-3.5" /> Sabitlemeyi kaldır
+                </div>
+              </div>
+              {others.length > 0 && (
+                <div className="dc-sidebar">
+                  {others.map((p) => (
+                    <div
+                      key={p.sessionId}
+                      className="dc-tile dc-tile--thumb"
+                      onClick={() => togglePin(p.sessionId)}
+                      title="Büyütmek için tıkla"
+                    >
+                      <ParticipantView participant={p} />
+                      <div className="dc-tile__pin-hint">
+                        <PinIcon className="size-3" /> Sabitle
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── grid mode ── */
+            <div className={gridClass}>
+              {participants.map((p) => (
+                <div
+                  key={p.sessionId}
+                  className="dc-tile"
+                  onClick={() => togglePin(p.sessionId)}
+                  title="Büyütmek için tıkla"
+                >
+                  <ParticipantView participant={p} />
+                  <div className="dc-tile__pin-hint">
+                    <PinIcon className="size-3" /> Sabitle
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </StreamTheme>
+      </div>
+
+      {/* ── control bar ── */}
+      <div className="dc-bar">
+        {/* mic */}
+        <button
+          className={`dc-btn ${isMicMuted ? "dc-btn--danger" : ""}`}
+          onClick={() => microphone.toggle()}
+          title={isMicMuted ? "Sesi Aç" : "Sesi Kapat"}
+        >
+          {isMicMuted ? <MicOffIcon className="dc-btn__icon" /> : <MicIcon className="dc-btn__icon" />}
+          <span className="dc-btn__label">{isMicMuted ? "Sesi Aç" : "Sessiz"}</span>
+        </button>
+
+        {/* camera */}
+        <button
+          className={`dc-btn ${isCamMuted ? "dc-btn--danger" : ""}`}
+          onClick={() => camera.toggle()}
+          title={isCamMuted ? "Kamerayı Aç" : "Kamerayı Kapat"}
+        >
+          {isCamMuted ? <VideoOffIcon className="dc-btn__icon" /> : <VideoIcon className="dc-btn__icon" />}
+          <span className="dc-btn__label">{isCamMuted ? "Kamera Aç" : "Kamerayı Kapat"}</span>
+        </button>
+
+        {/* screen share */}
+        <button
+          className={`dc-btn ${isScreenSharing ? "dc-btn--active" : ""}`}
+          onClick={handleScreenShare}
+          title={isScreenSharing ? "Paylaşımı Durdur" : "Ekranı Paylaş"}
+        >
+          {isScreenSharing
+            ? <MonitorOffIcon className="dc-btn__icon" />
+            : <MonitorIcon className="dc-btn__icon" />}
+          <span className="dc-btn__label">{isScreenSharing ? "Paylaşımı Durdur" : "Ekran Paylaş"}</span>
+        </button>
+
+        <div className="dc-bar__divider" />
+
+        {/* record */}
+        <button
+          className={`dc-btn ${isRecording ? "dc-btn--recording" : ""}`}
+          onClick={handleRecord}
+          disabled={recordLoading}
+          title={isRecording ? "Kaydı Durdur" : "Kayıt Başlat"}
+        >
+          {recordLoading
+            ? <LoaderIcon className="dc-btn__icon animate-spin" />
+            : isRecording
+              ? <SquareIcon className="dc-btn__icon" />
+              : <CircleIcon className="dc-btn__icon" />}
+          <span className="dc-btn__label">{isRecording ? "Kaydı Durdur" : "Kayıt"}</span>
+        </button>
+
+        {/* fullscreen */}
+        <button
+          className="dc-btn"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran"}
+        >
+          {isFullscreen
+            ? <Minimize2Icon className="dc-btn__icon" />
+            : <Maximize2Icon className="dc-btn__icon" />}
+          <span className="dc-btn__label">{isFullscreen ? "Küçült" : "Tam Ekran"}</span>
+        </button>
+
+        <div className="dc-bar__divider" />
+
+        {/* leave */}
+        <button
+          className="dc-btn dc-btn--leave"
+          onClick={() => call.leave()}
+          title="Görüşmeden Ayrıl"
+        >
+          <PhoneOffIcon className="dc-btn__icon" />
+          <span className="dc-btn__label">Ayrıl</span>
+        </button>
+      </div>
+    </div>
   );
 };
 

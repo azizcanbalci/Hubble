@@ -1,12 +1,329 @@
-.call-page-shell .str-video__participant-view .str-video__participant-details {
-  background: rgba(0, 0, 0, 0.52) !important;
-  border-radius: 999px;
-  padding: 4px 8px;
+/* ═══════════════════════════════════════════════════════════════
+   CALL PAGE — Discord-like dark layout
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Shell ────────────────────────────────────────────────────── */
+.dc-shell {
+  position: fixed;
+  inset: 0;
+  background: #1e1f22;
+  z-index: 100;
+  /* NOT flex center — children must fill the whole shell */
 }
 
-.call-page-shell .str-video__participant-view .str-video__participant-details .str-video__participant-details__name,
-.call-page-shell .str-video__participant-listing-item .str-video__participant-listing-item__display-name,
-.call-page-shell .str-video__livestream-layout__wrapper .str-video__livestream-layout__overlay .str-video__livestream-layout__speaker-name {
-  color: #ffffff !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+/* Loading state only centers content */
+.dc-shell--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dc-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #dbdee1;
+}
+
+.dc-loading-icon {
+  width: 36px;
+  height: 36px;
+  color: #5865f2;
+  animation: dc-pulse 1.5s ease-in-out infinite;
+}
+
+.dc-shell__error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f23f43;
+  font-size: 14px;
+}
+
+/* ── Call container ───────────────────────────────────────────── */
+.dc-call {
+  /* fixed position fills the whole viewport regardless of parents */
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1e1f22;
+  overflow: hidden;
+  z-index: 100;
+}
+
+/* ── Video area ───────────────────────────────────────────────── */
+.dc-video-area {
+  flex: 1;
+  min-height: 0;
+  position: relative;   /* grid tiles use absolute inset inside this */
+  overflow: hidden;
+  background: #111214;
+}
+
+/* StreamTheme wrapper must fill the video area */
+.dc-video-area > * {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Grid layouts (absolute-fill inside video area) ───────────── */
+.dc-grid {
+  position: absolute;
+  inset: 6px;
+  display: grid;
+  gap: 5px;
+  background: #111214;
+}
+
+.dc-grid--1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.dc-grid--2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.dc-grid--3,
+.dc-grid--4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* 3rd tile: centered in second row */
+.dc-grid--3 .dc-tile:last-child {
+  grid-column: span 2;
+  max-width: 55%;
+  justify-self: center;
+  width: 100%;
+}
+
+.dc-grid--5,
+.dc-grid--6 {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.dc-grid--7,
+.dc-grid--8,
+.dc-grid--9 {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+/* ── Pinned layout ────────────────────────────────────────────── */
+.dc-grid--pinned {
+  position: absolute;
+  inset: 6px;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  background: #111214;
+}
+
+.dc-tile--main {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #2b2d31;
+  cursor: pointer;
+}
+
+.dc-sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3c42 transparent;
+}
+.dc-sidebar::-webkit-scrollbar { width: 4px; }
+.dc-sidebar::-webkit-scrollbar-thumb { background: #3a3c42; border-radius: 4px; }
+
+.dc-tile--thumb {
+  height: 130px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #2b2d31;
+  cursor: pointer;
+}
+
+/* ── Individual tile ──────────────────────────────────────────── */
+.dc-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #2b2d31;
+  cursor: pointer;
+  /* min dimensions so grid items don't collapse */
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── ParticipantView fills its tile ──────────────────────────── */
+
+/* Stream renders .str-video__participant-view inside ParticipantView */
+.dc-tile .str-video__participant-view,
+.dc-tile--main .str-video__participant-view,
+.dc-tile--thumb .str-video__participant-view {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* The actual <video> element */
+.dc-tile video,
+.dc-tile--main video,
+.dc-tile--thumb video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* Name badge */
+.dc-tile .str-video__participant-details,
+.dc-tile--main .str-video__participant-details,
+.dc-tile--thumb .str-video__participant-details {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.6) !important;
+  border-radius: 999px;
+  padding: 3px 10px !important;
+  z-index: 5;
+}
+
+.dc-tile .str-video__participant-details__name,
+.dc-tile--main .str-video__participant-details__name,
+.dc-tile--thumb .str-video__participant-details__name {
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* ── Pin hints ────────────────────────────────────────────────── */
+.dc-tile__pin-hint,
+.dc-tile__unpin-hint {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.dc-tile:hover .dc-tile__pin-hint,
+.dc-tile--main:hover .dc-tile__unpin-hint,
+.dc-tile--thumb:hover .dc-tile__pin-hint {
+  opacity: 1;
+}
+
+/* ── Control bar ──────────────────────────────────────────────── */
+.dc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 76px;
+  padding: 0 24px;
+  background: #232428;
+  border-top: 1px solid #1a1b1e;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.dc-bar__divider {
+  width: 1px;
+  height: 36px;
+  background: #3a3c42;
+  margin: 0 4px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.dc-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 66px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #383a40;
+  border: none;
+  color: #dbdee1;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+  user-select: none;
+}
+
+.dc-btn:hover:not(:disabled) {
+  background: #4e5058;
+  transform: translateY(-1px);
+}
+.dc-btn:active:not(:disabled) { transform: translateY(0); }
+.dc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.dc-btn__icon { width: 20px; height: 20px; }
+
+.dc-btn__label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.dc-btn--danger { background: #f23f43; color: #fff; }
+.dc-btn--danger:hover:not(:disabled) { background: #d03032; }
+
+.dc-btn--active { background: #23a55a; color: #fff; }
+.dc-btn--active:hover:not(:disabled) { background: #1a8a48; }
+
+.dc-btn--recording {
+  background: #f23f43;
+  color: #fff;
+  animation: dc-pulse-ring 1.6s ease infinite;
+}
+
+.dc-btn--leave { background: #f23f43; color: #fff; }
+.dc-btn--leave:hover:not(:disabled) { background: #d03032; }
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes dc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes dc-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(242, 63, 67, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(242, 63, 67, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(242, 63, 67, 0); }
 }
