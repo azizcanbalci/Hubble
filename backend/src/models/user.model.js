@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    settings: {
+      sentimentAnalysisEnabled: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );
