@@ -1,4 +1,5 @@
 import { Message } from "../models/message.model.js";
+import { SentimentResult } from "../models/sentiment.model.js";
 
 const normalizeWebhookMessage = (payload) => {
   const message = payload?.message || payload?.data?.message || payload?.data || payload;
@@ -113,6 +114,78 @@ export const getMessagesByChannel = async (req, res) => {
 };
 
 const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const analyzeMessages = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { messages, channelId } = req.body;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ message: "messages array is required" });
+    }
+
+    const ML_API_URL = process.env.ML_API_URL || "http://localhost:8000";
+
+    const results = await Promise.all(
+      messages.map(async ({ id, text }) => {
+        const response = await fetch(`${ML_API_URL}/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!response.ok) throw new Error(`ML API error: ${response.status}`);
+
+        const data = await response.json();
+        const result = data.results[0];
+
+        return { id, ...result };
+      })
+    );
+
+    // Persist per-user sentiment results
+    await SentimentResult.bulkWrite(
+      results.map((r) => ({
+        updateOne: {
+          filter: { userId, streamMessageId: r.id },
+          update: {
+            $set: {
+              userId,
+              streamMessageId: r.id,
+              channelId: channelId || "",
+              text: r.text,
+              sentiment: r.sentiment,
+              emoji: r.emoji,
+              confidence: r.confidence,
+            },
+          },
+          upsert: true,
+        },
+      }))
+    );
+
+    return res.status(200).json({ results });
+  } catch (error) {
+    console.error("Error analyzing messages:", error);
+    return res.status(500).json({ message: "Failed to analyze messages" });
+  }
+};
+
+export const getSentimentsForChannel = async (req, res) => {
+  try {
+    const { userId } = req.auth();
+    const { channelId } = req.params;
+
+    const sentiments = await SentimentResult.find({ userId, channelId })
+      .select("streamMessageId sentiment emoji confidence")
+      .lean();
+
+    return res.status(200).json({ sentiments });
+  } catch (error) {
+    console.error("Error fetching sentiments:", error);
+    return res.status(500).json({ message: "Failed to fetch sentiments" });
+  }
+};
 
 export const searchMessagesInChannel = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ import {
   VideoIcon,
   BrainIcon,
   SearchIcon,
+  LoaderIcon,
 } from "lucide-react";
 import {
   useChannelActionContext,
@@ -13,10 +14,12 @@ import {
 } from "stream-chat-react";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
 import MembersModal from "./MembersModal";
 import PinnedMessagesModal from "./PinnedMessagesModal";
 import InviteModal from "./InviteModal";
 import ChannelSearchModal from "./ChannelSearchModal";
+import { useAnalyze } from "../context/AnalyzeContext";
 
 const CustomChannelHeader = () => {
   const { channel } = useChannelStateContext();
@@ -30,6 +33,32 @@ const CustomChannelHeader = () => {
   const [showPinnedMessages, setShowPinnedMessages] = useState(false);
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+
+  const {
+    analyzeMode,
+    selectedIds,
+    isAnalyzing,
+    enterAnalyzeMode,
+    exitAnalyzeMode,
+    runAnalysis,
+    sentimentAnalysisEnabled,
+  } = useAnalyze();
+
+  const handleAnalyzeClick = async () => {
+    if (!analyzeMode) {
+      enterAnalyzeMode();
+      return;
+    }
+
+    const selectedMsgs = [...selectedIds]
+      .map((id) => {
+        const msg = channel.state.messages.find((m) => m.id === id);
+        return { id, text: msg?.text || "" };
+      })
+      .filter((m) => m.text.trim());
+
+    await runAnalysis(selectedMsgs);
+  };
 
   const otherUser = Object.values(channel.state.members).find(
     (member) => member.user.id !== user.id,
@@ -48,7 +77,7 @@ const CustomChannelHeader = () => {
     if (channel) {
       const callUrl = `${window.location.origin}/call/${channel.id}`;
       await channel.sendMessage({
-        text: `I've started a video call. Join me here: ${callUrl}`,
+        attachments: [{ type: "video_call", callUrl }],
       });
     }
   };
@@ -84,24 +113,24 @@ const CustomChannelHeader = () => {
   }, []);
 
   return (
-    <div className="h-14 border-b border-gray-200 flex items-center px-4 justify-between bg-white">
-      <div className="flex items-center gap-3">
+    <div className="discord-chat-header">
+      <div className="discord-chat-header__left">
         <div className="flex items-center gap-2">
           {channel.data?.private ? (
-            <LockIcon className="size-4 text-[#616061]" />
+            <LockIcon className="size-4 text-[#949ba4]" />
           ) : (
-            <HashIcon className="size-4 text-[#616061]" />
+            <HashIcon className="size-4 text-[#949ba4]" />
           )}
 
           {isDM && otherUser?.user?.image && (
             <img
               src={otherUser.user.image}
               alt={otherUser.user.name || otherUser.user.id}
-              className="size-7 rounded-full object-cover mr-1"
+              className="size-7 rounded-full object-cover"
             />
           )}
 
-          <span className="font-medium text-[#1D1C1D]">
+          <span className="font-semibold text-[#f2f3f5]">
             {isDM
               ? otherUser?.user?.name || otherUser?.user?.id
               : channel.data?.id}
@@ -109,43 +138,75 @@ const CustomChannelHeader = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          className="flex items-center gap-1 hover:bg-[#efecec] py-1 px-2 rounded"
-          type="button"
-          title="Analyze Messages"
-        >
-          <BrainIcon className="size-4 text-[#616061]" />
-          <span className="text-sm text-[#616061]">Analyze</span>
-        </button>
+      <div className="discord-chat-header__right">
+        {sentimentAnalysisEnabled !== false && (
+          analyzeMode ? (
+            <>
+              <button
+                className="discord-header-btn discord-header-btn--analyze-run"
+                onClick={handleAnalyzeClick}
+                disabled={isAnalyzing}
+                title="Seçili mesajları analiz et"
+              >
+                {isAnalyzing ? (
+                  <LoaderIcon className="size-4 animate-spin" />
+                ) : (
+                  <BrainIcon className="size-4" />
+                )}
+                <span className="text-sm">
+                  {isAnalyzing ? "Analiz ediliyor..." : `Analiz Et${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}`}
+                </span>
+              </button>
+              <button
+                className="discord-header-btn discord-header-btn--analyze-cancel"
+                onClick={exitAnalyzeMode}
+                disabled={isAnalyzing}
+                title="İptal"
+              >
+                <span className="text-sm">✕ İptal</span>
+              </button>
+            </>
+          ) : (
+            <button
+              className="discord-header-btn"
+              type="button"
+              title="Mesajları Analiz Et"
+              onClick={handleAnalyzeClick}
+            >
+              <BrainIcon className="size-4" />
+              <span className="text-sm">Analyze</span>
+            </button>
+          )
+        )}
 
         <button
-          className="flex items-center gap-2 hover:bg-[#F8F8F8] py-1 px-2 rounded"
+          className="discord-header-btn"
           onClick={() => setShowMembers(true)}
+          title="Members"
         >
-          <UsersIcon className="size-5 text-[#616061]" />
-          <span className="text-sm text-[#616061]">{memberCount}</span>
+          <UsersIcon className="size-4" />
+          <span className="text-sm">{memberCount}</span>
         </button>
 
         <button
-          className="hover:bg-[#F8F8F8] p-1 rounded"
+          className="discord-header-btn"
           onClick={() => setShowSearch(true)}
           title="Search in Channel (Ctrl/Cmd + K)"
         >
-          <SearchIcon className="size-5 text-[#616061]" />
+          <SearchIcon className="size-4" />
         </button>
 
         <button
-          className="hover:bg-[#F8F8F8] p-1 rounded"
+          className="discord-header-btn discord-header-btn--video"
           onClick={handleVideoCall}
           title="Start Video Call"
         >
-          <VideoIcon className="size-5 text-[#1264A3]" />
+          <VideoIcon className="size-4" />
         </button>
 
         {channel.data?.private && (
           <button
-            className="btn btn-primary"
+            className="discord-header-btn discord-header-btn--invite"
             onClick={() => setShowInvite(true)}
           >
             Invite
@@ -153,10 +214,11 @@ const CustomChannelHeader = () => {
         )}
 
         <button
-          className="hover:bg-[#F8F8F8] p-1 rounded"
+          className="discord-header-btn"
           onClick={handleShowPinned}
+          title="Pinned Messages"
         >
-          <PinIcon className="size-4 text-[#616061]" />
+          <PinIcon className="size-4" />
         </button>
       </div>
 
