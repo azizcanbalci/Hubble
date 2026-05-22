@@ -1,5 +1,6 @@
 import "../instrument.mjs";
 import express from "express";
+import mongoose from "mongoose";
 import { ENV } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 import { clerkMiddleware } from "@clerk/express";
@@ -9,6 +10,8 @@ import chatRoutes from "./routes/chat.route.js";
 import channelRoutes from "./routes/channel.route.js";
 import messageRoutes, { streamWebhookRouter } from "./routes/message.route.js";
 import videoRoutes from "./routes/video.route.js";
+import serverRoutes from "./routes/server.route.js";
+import friendRoutes from "./routes/friend.route.js";
 
 import cors from "cors";
 
@@ -34,12 +37,16 @@ app.use("/api/channels", channelRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/webhooks/stream", streamWebhookRouter);
 app.use("/api/video", videoRoutes);
+app.use("/api/servers", serverRoutes);
+app.use("/api/friends", friendRoutes);
 
 Sentry.setupExpressErrorHandler(app);
 
 const startServer = async () => {
   try {
     await connectDB();
+    // Drop stale index left from an earlier failed schema attempt
+    await mongoose.connection.collection("servers").dropIndex("inviteCode_1").catch(() => {});
     if (ENV.NODE_ENV !== "production") {
       app.listen(ENV.PORT, () => {
         console.log("Server started on port:", ENV.PORT);

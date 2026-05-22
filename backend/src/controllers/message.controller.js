@@ -139,7 +139,15 @@ export const analyzeMessages = async (req, res) => {
         const data = await response.json();
         const result = data.results[0];
 
-        return { id, ...result };
+        // Preserve the original Stream message id — ML API returns its own UUID
+        // which would overwrite ours if spread directly
+        return {
+          id,
+          text: result.text,
+          sentiment: result.sentiment,
+          emoji: result.emoji,
+          confidence: result.confidence,
+        };
       })
     );
 
