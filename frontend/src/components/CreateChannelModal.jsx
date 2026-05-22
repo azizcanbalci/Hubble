@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/react";
 import toast from "react-hot-toast";
 import { AlertCircleIcon, HashIcon, LockIcon, UsersIcon, XIcon } from "lucide-react";
 
-const CreateChannelModal = ({ onClose }) => {
+const CreateChannelModal = ({ onClose, serverId }) => {
   const [channelName, setChannelName] = useState("");
   const [channelType, setChannelType] = useState("public");
   const [description, setDescription] = useState("");
@@ -121,6 +121,10 @@ const CreateChannelModal = ({ onClose }) => {
       } else {
         channelData.visibility = "public";
         channelData.discoverable = true;
+      }
+
+      if (serverId) {
+        channelData.serverId = serverId;
       }
 
       const channel = client.channel("messaging", channelId, channelData);

@@ -48,6 +48,11 @@ const channelSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    serverId: {
+      type: String,
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );

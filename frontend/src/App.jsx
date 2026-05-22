@@ -4,6 +4,8 @@ import { Navigate, Route, Routes } from "react-router";
 import AuthPage from "./pages/AuthPage";
 import CallPage from "./pages/CallPage";
 import HomePage from "./pages/HomePage";
+import InvitePage from "./pages/InvitePage";
+import AnalysesPage from "./pages/AnalysesPage";
 
 import * as Sentry from "@sentry/react";
 
@@ -22,6 +24,16 @@ const App = () => {
       <Route
         path="/call/:id"
         element={isSignedIn ? <CallPage /> : <Navigate to={"/auth"} replace />}
+      />
+
+      <Route
+        path="/invite/:code"
+        element={isSignedIn ? <InvitePage /> : <Navigate to={"/auth"} replace />}
+      />
+
+      <Route
+        path="/analyses"
+        element={isSignedIn ? <AnalysesPage /> : <Navigate to={"/auth"} replace />}
       />
 
       <Route

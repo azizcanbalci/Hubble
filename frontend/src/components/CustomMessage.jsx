@@ -1,9 +1,15 @@
 import { MessageSimple, useMessageContext } from "stream-chat-react";
 import { useAnalyze } from "../context/AnalyzeContext";
+import { useFriends } from "../context/FriendsContext";
 
 const CustomMessage = () => {
   const { message } = useMessageContext();
   const { analyzeMode, selectedIds, toggleMessage, sentimentMap } = useAnalyze();
+  const { blockedUserIds } = useFriends();
+
+  if (blockedUserIds.has(message.user?.id)) {
+    return <div className="message-blocked">[Engellenmiş kullanıcının mesajı gizlendi]</div>;
+  }
 
   const sentiment = sentimentMap[message.id];
   const isSelected = selectedIds.has(message.id);
