@@ -60,7 +60,7 @@ const CustomChannelHeader = () => {
       })
       .filter((m) => m.text.trim());
 
-    await runAnalysis(selectedMsgs);
+    await runAnalysis(selectedMsgs, channel.id);
   };
 
   const otherUser = Object.values(channel.state.members).find(

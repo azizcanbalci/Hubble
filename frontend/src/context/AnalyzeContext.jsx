@@ -12,19 +12,20 @@ export const AnalyzeProvider = ({ children, channelId, sentimentAnalysisEnabled 
   const queryClient = useQueryClient();
 
   const { data: sentimentData } = useQuery({
-    queryKey: ["sentiments", channelId],
+    queryKey: ["sentiments"],
     queryFn: () => getSentimentsForChannel(channelId),
     enabled: !!channelId && sentimentAnalysisEnabled !== false,
     staleTime: 5 * 60 * 1000,
   });
 
   const sentimentMap = useMemo(() => {
+    if (!sentimentAnalysisEnabled) return {};
     const map = {};
     (sentimentData?.sentiments || []).forEach((s) => {
       map[s.streamMessageId] = s;
     });
     return map;
-  }, [sentimentData]);
+  }, [sentimentData, sentimentAnalysisEnabled]);
 
   const toggleMessage = (id) => {
     setSelectedIds((prev) => {
@@ -45,15 +46,31 @@ export const AnalyzeProvider = ({ children, channelId, sentimentAnalysisEnabled 
     setSelectedIds(new Set());
   };
 
-  const runAnalysis = async (messages) => {
+  const runAnalysis = async (messages, activeChannelId) => {
     if (!messages.length) {
       exitAnalyzeMode();
       return;
     }
     setIsAnalyzing(true);
     try {
-      const { results } = await analyzeMessages(messages, channelId);
-      await queryClient.invalidateQueries({ queryKey: ["sentiments", channelId] });
+      const { results } = await analyzeMessages(messages, activeChannelId || channelId);
+
+      queryClient.setQueryData(["sentiments"], (old) => {
+        const map = {};
+        (old?.sentiments || []).forEach((s) => {
+          map[s.streamMessageId] = s;
+        });
+        results.forEach((r) => {
+          map[r.id] = {
+            streamMessageId: r.id,
+            sentiment: r.sentiment,
+            emoji: r.emoji,
+            confidence: r.confidence,
+          };
+        });
+        return { sentiments: Object.values(map) };
+      });
+
       toast.success(`${results.length} mesaj analiz edildi`);
     } catch {
       toast.error("Analiz başarısız oldu");
