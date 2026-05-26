@@ -184,7 +184,7 @@ export const getSentimentsForChannel = async (req, res) => {
     const { userId } = req.auth();
     const { channelId } = req.params;
 
-    const sentiments = await SentimentResult.find({ userId, channelId })
+    const sentiments = await SentimentResult.find({ userId })
       .select("streamMessageId sentiment emoji confidence")
       .lean();
 

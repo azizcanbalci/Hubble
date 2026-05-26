@@ -1727,7 +1727,8 @@ html, body {
 
 /* ─── Analyses Page ──────────────────────────────────────────────── */
 .analyses-page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: #1e1f22;
   display: flex;
   flex-direction: column;
