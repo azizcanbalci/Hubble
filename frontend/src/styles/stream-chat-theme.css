@@ -1057,6 +1057,160 @@ html, body {
   cursor: not-allowed;
 }
 
+/* ── Voice Channels ─────────────────────────────────────────────────── */
+
+.vc-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.vc-sidebar-participant {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 28px;
+  font-size: 12px;
+  color: var(--ds-text-muted);
+  min-height: 22px;
+}
+
+.vc-sidebar-participant__avatar-wrap {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.vc-sidebar-participant__avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  transition: box-shadow 0.15s;
+}
+
+.vc-sidebar-participant__avatar--speaking {
+  box-shadow: 0 0 0 2px #23a55a;
+}
+
+.vc-sidebar-participant__avatar--placeholder {
+  background: var(--ds-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Participant card in the main voice panel */
+.vc-participant-card {
+  background: var(--ds-sidebar-bg);
+  border-radius: 8px;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.vc-participant-card--speaking {
+  border-color: #23a55a;
+}
+
+.vc-participant-card__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.vc-participant-card__avatar--placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--ds-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.vc-participant-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ds-text-normal);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Voice bar — sits above the bottom bar in the channel sidebar */
+.vc-bar {
+  background: #232428;
+  border-top: 1px solid var(--ds-separator);
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.vc-bar__status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.vc-bar__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.vc-bar__channel-name {
+  font-size: 12px;
+  color: var(--ds-text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-bar__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--ds-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, background 0.1s;
+}
+
+.vc-bar__btn:hover {
+  background: var(--ds-hover-bg);
+  color: var(--ds-text-normal);
+}
+
+.vc-bar__btn--muted {
+  color: #f23f43;
+}
+
+.vc-bar__btn--leave {
+  color: #f23f43;
+}
+
+.vc-bar__btn--leave:hover {
+  background: rgba(242, 63, 67, 0.1);
+}
+
 .discord-header-btn--analyze-cancel {
   color: var(--ds-danger);
 }

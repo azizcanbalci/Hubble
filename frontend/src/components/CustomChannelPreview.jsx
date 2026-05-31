@@ -6,6 +6,7 @@ const CustomChannelPreview = ({ channel, setActiveChannel, activeChannel }) => {
   const isDM = channel.data.member_count === 2 && channel.data.id.includes("user_");
 
   if (isDM) return null;
+  if (channel.data?.channelType === "voice") return null;
 
   const unreadCount = channel.countUnread();
 

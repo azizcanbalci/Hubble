@@ -34,6 +34,15 @@ export function AppAuthProvider({ children }) {
     setLocalUser(null);
   }, []);
 
+  const updateCurrentUser = useCallback((updates) => {
+    setLocalUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      localStorage.setItem("hubble_user", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const isCustomSignedIn = !!customToken && !!localUser;
   const isSignedIn = clerkSignedIn || isCustomSignedIn;
   const isLoaded = clerkLoaded;
@@ -59,6 +68,7 @@ export function AppAuthProvider({ children }) {
         isCustomSignedIn,
         loginWithCustom,
         logoutCustom,
+        updateCurrentUser,
       }}
     >
       {children}

@@ -27,7 +27,7 @@ const channelSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["public", "private"],
+      enum: ["public", "private", "voice"],
       default: "public",
     },
     description: {

@@ -1,8 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { isValidObjectId } from "mongoose";
 import { User } from "../models/user.model.js";
 import { upsertStreamUser, addUserToPublicChannels } from "../config/stream.js";
 import { ENV } from "../config/env.js";
+
+const userFilter = (userId) =>
+  isValidObjectId(userId) ? { _id: userId } : { clerkId: userId };
 
 const signToken = (userId) =>
   jwt.sign({ userId }, ENV.JWT_SECRET, { expiresIn: "30d" });
@@ -54,6 +58,34 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({ message: "Kayıt sırasında bir hata oluştu" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, image } = req.body;
+    if (!name?.trim()) {
+      return res.status(400).json({ message: "İsim zorunludur" });
+    }
+    const updateFields = { name: name.trim() };
+    if (image?.trim()) updateFields.image = image.trim();
+
+    const user = await User.findOneAndUpdate(
+      userFilter(req.userId),
+      { $set: updateFields },
+      { new: true }
+    ).select("name image email");
+
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı" });
+
+    await upsertStreamUser({ id: req.userId, name: user.name, image: user.image });
+
+    return res.status(200).json({
+      user: { id: user._id.toString(), name: user.name, image: user.image, email: user.email },
+    });
+  } catch (error) {
+    console.error("updateProfile error:", error);
+    return res.status(500).json({ message: "Profil güncellenemedi" });
   }
 };
 

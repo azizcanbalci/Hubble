@@ -1,9 +1,11 @@
+import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { UserButton, useClerk } from "@clerk/clerk-react";
 import { useAppAuth } from "../context/AppAuthContext";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStreamChat } from "../hooks/useStreamChat";
+import { useStreamVideo } from "../hooks/useStreamVideo";
 import {
   syncMessageToMongo,
   getUserSettings,
@@ -24,6 +26,8 @@ import {
   Window,
 } from "stream-chat-react";
 
+import { StreamVideo, StreamCall, useCallStateHooks, CallingState } from "@stream-io/video-react-sdk";
+
 import {
   ChevronDownIcon,
   PlusIcon,
@@ -43,10 +47,14 @@ import CustomChannelHeader from "../components/CustomChannelHeader";
 import VideoCallAttachment from "../components/VideoCallAttachment";
 import CustomMessage from "../components/CustomMessage";
 import UserSettingsModal from "../components/UserSettingsModal";
+import VoiceChannelPreview from "../components/VoiceChannelPreview";
+import VoiceChannelBar from "../components/VoiceChannelBar";
+import VoiceChannelView from "../components/VoiceChannelView";
 import { AnalyzeProvider } from "../context/AnalyzeContext";
 import { FriendsProvider } from "../context/FriendsContext";
 import FriendsList from "../components/FriendsList";
 import { useTheme } from "../context/ThemeContext";
+import { useDesktopNotifications } from "../hooks/useDesktopNotifications";
 import toast from "react-hot-toast";
 
 const CustomAttachment = (props) => {
@@ -122,6 +130,26 @@ const NoChannelPlaceholder = () => (
   </div>
 );
 
+// Tracks participants and calling state inside StreamCall context
+const VoiceParticipantTracker = ({ onParticipants, onDisconnect }) => {
+  const { useParticipants, useCallCallingState } = useCallStateHooks();
+  const participants = useParticipants();
+  const callingState = useCallCallingState();
+
+  useEffect(() => {
+    onParticipants(participants);
+  }, [participants, onParticipants]);
+
+  // Handle unexpected disconnects (network drop, server-side kick, etc.)
+  useEffect(() => {
+    if (callingState === CallingState.LEFT) {
+      onDisconnect();
+    }
+  }, [callingState, onDisconnect]);
+
+  return null;
+};
+
 const HomePage = () => {
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [isCreateServerOpen, setIsCreateServerOpen] = useState(false);
@@ -130,11 +158,21 @@ const HomePage = () => {
   const [selectedServerId, setSelectedServerId] = useState("dm");
   const [searchParams, setSearchParams] = useSearchParams();
   const migrationAttempted = useRef(false);
+  const activeChannelRef = useRef(null);
+
+  // Voice channel state
+  const [voiceChannels, setVoiceChannels] = useState([]);
+  const [connectedVoiceChannel, setConnectedVoiceChannel] = useState(null);
+  const [activeVoiceCall, setActiveVoiceCall] = useState(null);
+  const [voiceParticipants, setVoiceParticipants] = useState([]);
+  // Polled participants for ALL voice channels (keyed by channel id)
+  const [voiceChannelParticipants, setVoiceChannelParticipants] = useState({});
 
   const queryClient = useQueryClient();
   const { currentUser: user, isCustomSignedIn, logoutCustom } = useAppAuth();
   const { signOut: clerkSignOut } = useClerk();
   const { chatClient, error, isLoading } = useStreamChat();
+  const { videoClient } = useStreamVideo();
   const { theme, toggle: toggleTheme } = useTheme();
 
   const { data: settingsData } = useQuery({
@@ -165,7 +203,7 @@ const HomePage = () => {
     if (
       !chatClient ||
       migrationAttempted.current ||
-      serversData === undefined // still loading
+      serversData === undefined
     )
       return;
 
@@ -197,7 +235,69 @@ const HomePage = () => {
     }
   }, [chatClient, searchParams]);
 
-  // Sync outgoing messages to MongoDB
+  // Fetch voice channels for the selected server
+  useEffect(() => {
+    if (!chatClient || !selectedServerId || selectedServerId === "dm") {
+      setVoiceChannels([]);
+      return;
+    }
+
+    chatClient
+      .queryChannels(
+        {
+          serverId: { $eq: selectedServerId },
+          members: { $in: [chatClient.user.id] },
+        },
+        [{ created_at: 1 }],
+        { state: true, watch: true, limit: 100 }
+      )
+      .then((channels) => {
+        setVoiceChannels(channels.filter((ch) => ch.data?.channelType === "voice"));
+      })
+      .catch(() => setVoiceChannels([]));
+  }, [chatClient, selectedServerId]);
+
+  // Poll participants for ALL voice channels every 5 seconds
+  useEffect(() => {
+    if (!videoClient || voiceChannels.length === 0) {
+      setVoiceChannelParticipants({});
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAll = async () => {
+      const updates = {};
+      for (const ch of voiceChannels) {
+        try {
+          const call = videoClient.call("default", ch.id);
+          const { call: callData } = await call.get();
+          const sessionParticipants = callData.session?.participants ?? [];
+          updates[ch.id] = sessionParticipants.map((p) => ({
+            sessionId: p.user_session_id || p.user?.id || String(Math.random()),
+            userId: p.user?.id || "",
+            name: p.user?.name || p.user?.id || "Kullanıcı",
+            image: p.user?.image || null,
+            isSpeaking: false,
+            isMute: false,
+          }));
+        } catch {
+          updates[ch.id] = [];
+        }
+      }
+      if (isMounted) setVoiceChannelParticipants(updates);
+    };
+
+    fetchAll();
+    const interval = setInterval(fetchAll, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [videoClient, voiceChannels]);
+
+  // Sync outgoing messages to MongoDB + clear draft on send
   useEffect(() => {
     if (!chatClient) return;
 
@@ -206,6 +306,8 @@ const HomePage = () => {
       if (event.message.user?.id !== chatClient.userID) return;
 
       const [channelType, channelId] = (event.cid || "messaging:").split(":");
+
+      localStorage.removeItem(`hubble_draft_${channelId}`);
 
       syncMessageToMongo({
         message: event.message,
@@ -223,7 +325,39 @@ const HomePage = () => {
     };
   }, [chatClient]);
 
+  // Draft: save as user types
+  useEffect(() => {
+    if (!activeChannel) return;
+    const save = (e) => {
+      if (!e.target.matches?.(".discord-chat-main textarea")) return;
+      const text = e.target.value;
+      const key = `hubble_draft_${activeChannel.id}`;
+      text.trim() ? localStorage.setItem(key, text) : localStorage.removeItem(key);
+    };
+    document.addEventListener("input", save);
+    return () => document.removeEventListener("input", save);
+  }, [activeChannel?.id]);
+
+  // Draft: restore when channel changes
+  useEffect(() => {
+    if (!activeChannel) return;
+    const draft = localStorage.getItem(`hubble_draft_${activeChannel.id}`);
+    if (!draft) return;
+    const t = setTimeout(() => {
+      const textarea = document.querySelector(".discord-chat-main textarea");
+      if (!textarea) return;
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+      setter.call(textarea, draft);
+      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    }, 150);
+    return () => clearTimeout(t);
+  }, [activeChannel?.id]);
+
   const sentimentAnalysisEnabled = settingsData?.settings?.sentimentAnalysisEnabled ?? true;
+
+  useEffect(() => { activeChannelRef.current = activeChannel?.id ?? null; }, [activeChannel]);
+
+  useDesktopNotifications(chatClient, settingsData?.settings, activeChannelRef);
 
   const selectedServer = servers.find((s) => s.serverId === selectedServerId);
 
@@ -249,6 +383,51 @@ const HomePage = () => {
     setSelectedServerId(server.serverId);
   };
 
+  const handleJoinVoice = async (channel) => {
+    if (!videoClient) return;
+    if (connectedVoiceChannel?.id === channel.id) return;
+
+    if (activeVoiceCall) {
+      await activeVoiceCall.leave().catch(() => {});
+      setActiveVoiceCall(null);
+      setConnectedVoiceChannel(null);
+      setVoiceParticipants([]);
+    }
+
+    try {
+      const call = videoClient.call("default", channel.id);
+      await call.join({ create: true });
+      // Voice channel: ensure camera is always off (mic stays on)
+      await call.camera.disable().catch(() => {});
+      setActiveVoiceCall(call);
+      setConnectedVoiceChannel({ id: channel.id, name: channel.data?.name || channel.id });
+    } catch {
+      toast.error("Ses kanalına bağlanılamadı.");
+    }
+  };
+
+  const handleVoiceDisconnect = () => {
+    setActiveVoiceCall(null);
+    setConnectedVoiceChannel(null);
+    setVoiceParticipants([]);
+  };
+
+  const handleParticipants = useCallback((participants) => {
+    setVoiceParticipants(participants);
+  }, []);
+
+  const handleSelectServer = async (id) => {
+    if (activeVoiceCall) {
+      await activeVoiceCall.leave().catch(() => {});
+      setActiveVoiceCall(null);
+      setConnectedVoiceChannel(null);
+      setVoiceParticipants([]);
+    }
+    setSelectedServerId(id);
+    setActiveChannel(null);
+    setSearchParams({});
+  };
+
   if (error) return <p>Something went wrong...</p>;
   if (isLoading || !chatClient) return <PageLoader />;
 
@@ -257,200 +436,244 @@ const HomePage = () => {
       ? { serverId: { $eq: selectedServerId }, members: { $in: [chatClient?.user?.id] } }
       : null;
 
-  return (
+  const appLayout = (
     <div className="discord-app">
       <Chat client={chatClient}>
-      <FriendsProvider enabled={!!chatClient}>
-        {/* Server Sidebar */}
-        <ServerSidebar
-          servers={servers}
-          selectedServerId={selectedServerId}
-          onSelectServer={(id) => {
-            setSelectedServerId(id);
-            setActiveChannel(null);
-            setSearchParams({});
-          }}
-          onOpenCreateModal={() => setIsCreateServerOpen(true)}
-        />
+        <FriendsProvider enabled={!!chatClient}>
+          {/* Server Sidebar */}
+          <ServerSidebar
+            servers={servers}
+            selectedServerId={selectedServerId}
+            onSelectServer={handleSelectServer}
+            onOpenCreateModal={() => setIsCreateServerOpen(true)}
+          />
 
-        {/* Channel Sidebar */}
-        <div className="discord-channel-sidebar">
-          <div className="discord-server-header">
-            <span className="discord-server-header__name">
-              {selectedServerId === "dm" ? "Direkt Mesajlar" : (selectedServer?.name ?? "Hubble")}
-            </span>
+          {/* Channel Sidebar */}
+          <div className="discord-channel-sidebar">
+            <div className="discord-server-header">
+              <span className="discord-server-header__name">
+                {selectedServerId === "dm" ? "Direkt Mesajlar" : (selectedServer?.name ?? "Hubble")}
+              </span>
 
-            <div className="discord-server-header__actions">
-              {/* Invite link for server owners/admins */}
-              {selectedServer &&
-                selectedServer.members.some(
-                  (m) => m.userId === user?.id && m.role !== "member"
-                ) && (
+              <div className="discord-server-header__actions">
+                {selectedServer &&
+                  selectedServer.members.some(
+                    (m) => m.userId === user?.id && m.role !== "member"
+                  ) && (
+                    <button
+                      className="discord-server-header__add"
+                      onClick={handleCopyInvite}
+                      title="Davet Linki Kopyala"
+                    >
+                      <LinkIcon className="size-4" />
+                    </button>
+                  )}
+
+                {selectedServerId !== "dm" && (
                   <button
                     className="discord-server-header__add"
-                    onClick={handleCopyInvite}
-                    title="Davet Linki Kopyala"
+                    onClick={() => setIsCreateChannelOpen(true)}
+                    title="Kanal Oluştur"
                   >
-                    <LinkIcon className="size-4" />
+                    <PlusIcon className="size-4" />
                   </button>
                 )}
+              </div>
+            </div>
 
-              {/* Add channel button (only in server mode) */}
-              {selectedServerId !== "dm" && (
+            <div className="discord-channel-list-body">
+              {selectedServerId !== "dm" && channelListFilters ? (
+                <>
+                  {/* Text channels */}
+                  <ChannelList
+                    key={selectedServerId}
+                    filters={channelListFilters}
+                    options={{ state: true, watch: true }}
+                    Preview={({ channel }) => (
+                      <CustomChannelPreview
+                        channel={channel}
+                        activeChannel={activeChannel}
+                        setActiveChannel={(ch) => setSearchParams({ channel: ch.id })}
+                      />
+                    )}
+                    List={({ children, loading, error: listError }) => (
+                      <>
+                        <div className="discord-section-header">
+                          <ChevronDownIcon className="size-3" />
+                          <span>Metin Kanalları</span>
+                        </div>
+                        {loading && <p className="discord-section-message">Yükleniyor...</p>}
+                        {listError && (
+                          <p className="discord-section-message discord-section-message--error">
+                            Kanallar yüklenemedi
+                          </p>
+                        )}
+                        <div>{children}</div>
+                      </>
+                    )}
+                  />
+
+                  {/* Voice channels */}
+                  {voiceChannels.length > 0 && (
+                    <div>
+                      <div className="discord-section-header">
+                        <ChevronDownIcon className="size-3" />
+                        <span>Ses Kanalları</span>
+                      </div>
+                      {voiceChannels.map((ch) => (
+                        <VoiceChannelPreview
+                          key={ch.id}
+                          channel={ch}
+                          isActive={connectedVoiceChannel?.id === ch.id}
+                          onJoin={handleJoinVoice}
+                          participants={
+                            connectedVoiceChannel?.id === ch.id
+                              ? voiceParticipants
+                              : (voiceChannelParticipants[ch.id] || [])
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="discord-section-header">
+                  <ChevronDownIcon className="size-3" />
+                  <span>Direkt Mesajlar</span>
+                </div>
+              )}
+
+              {selectedServerId === "dm" && (
+                <>
+                  <FriendsList activeChannel={activeChannel} />
+                  <UsersList activeChannel={activeChannel} />
+                </>
+              )}
+            </div>
+
+            {/* Voice bar — shown when in a voice channel */}
+            {activeVoiceCall && connectedVoiceChannel && (
+              <VoiceChannelBar
+                channelName={connectedVoiceChannel.name}
+                onDisconnect={handleVoiceDisconnect}
+              />
+            )}
+
+            {/* Bottom bar: theme toggle + settings + avatar */}
+            <div className="discord-channel-sidebar__bottom">
+              <button
+                className="discord-server-icon discord-server-icon--settings"
+                onClick={toggleTheme}
+                title={theme === "dark" ? "Açık Mod" : "Koyu Mod"}
+              >
+                {theme === "dark" ? (
+                  <SunIcon className="size-4" />
+                ) : (
+                  <MoonIcon className="size-4" />
+                )}
+              </button>
+
+              <button
+                className="discord-server-icon discord-server-icon--settings"
+                onClick={() => setShowSettings(true)}
+                title="Ayarlar"
+              >
+                <SettingsIcon className="size-5" />
+              </button>
+
+              {isCustomSignedIn ? (
                 <button
-                  className="discord-server-header__add"
-                  onClick={() => setIsCreateChannelOpen(true)}
-                  title="Kanal Oluştur"
+                  onClick={logoutCustom}
+                  title="Çıkış Yap"
+                  style={{
+                    width: "2rem",
+                    height: "2rem",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #7209b7, #533483)",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "white",
+                    fontSize: "0.75rem",
+                    fontWeight: "700",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
                 >
-                  <PlusIcon className="size-4" />
+                  {user?.image ? (
+                    <img src={user.image} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    (user?.name?.[0] || "?").toUpperCase()
+                  )}
                 </button>
+              ) : (
+                <UserButton />
               )}
             </div>
           </div>
 
-          <div className="discord-channel-list-body">
-            {selectedServerId !== "dm" && channelListFilters ? (
-              <ChannelList
-                key={selectedServerId}
-                filters={channelListFilters}
-                options={{ state: true, watch: true }}
-                Preview={({ channel }) => (
-                  <CustomChannelPreview
-                    channel={channel}
-                    activeChannel={activeChannel}
-                    setActiveChannel={(ch) => setSearchParams({ channel: ch.id })}
-                  />
-                )}
-                List={({ children, loading, error: listError }) => (
-                  <>
-                    <div className="discord-section-header">
-                      <ChevronDownIcon className="size-3" />
-                      <span>Kanallar</span>
-                    </div>
-                    {loading && <p className="discord-section-message">Yükleniyor...</p>}
-                    {listError && (
-                      <p className="discord-section-message discord-section-message--error">
-                        Kanallar yüklenemedi
-                      </p>
-                    )}
-                    <div>{children}</div>
-                  </>
-                )}
-              />
-            ) : (
-              /* DM mode — header only, UsersList below */
-              <div className="discord-section-header">
-                <ChevronDownIcon className="size-3" />
-                <span>Direkt Mesajlar</span>
-              </div>
-            )}
-
-            {/* DMs always visible, label context-aware */}
-            {selectedServerId === "dm" && (
-              <>
-                <FriendsList activeChannel={activeChannel} />
-                <UsersList activeChannel={activeChannel} />
-              </>
-            )}
-          </div>
-
-          {/* Bottom bar: theme toggle + settings + avatar */}
-          <div className="discord-channel-sidebar__bottom">
-            {/* Theme toggle */}
-            <button
-              className="discord-server-icon discord-server-icon--settings"
-              onClick={toggleTheme}
-              title={theme === "dark" ? "Açık Mod" : "Koyu Mod"}
-            >
-              {theme === "dark" ? (
-                <SunIcon className="size-4" />
-              ) : (
-                <MoonIcon className="size-4" />
-              )}
-            </button>
-
-            <button
-              className="discord-server-icon discord-server-icon--settings"
-              onClick={() => setShowSettings(true)}
-              title="Ayarlar"
-            >
-              <SettingsIcon className="size-5" />
-            </button>
-
-            {isCustomSignedIn ? (
-              <button
-                onClick={logoutCustom}
-                title="Çıkış Yap"
-                style={{
-                  width: "2rem",
-                  height: "2rem",
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #7209b7, #533483)",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "white",
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                {user?.image ? (
-                  <img src={user.image} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  (user?.name?.[0] || "?").toUpperCase()
-                )}
-              </button>
-            ) : (
-              <UserButton />
-            )}
-          </div>
-        </div>
-
-        {/* Main Chat */}
-        <div className="discord-chat-main">
-          {activeChannel ? (
-            <Channel channel={activeChannel} Attachment={CustomAttachment}>
-              <AnalyzeProvider
-                channelId={activeChannel.id}
-                sentimentAnalysisEnabled={sentimentAnalysisEnabled}
-              >
-                <Window>
-                  <CustomChannelHeader />
-                  <MessageList Message={CustomMessage} />
-                  <MessageInput />
-                </Window>
-                <Thread />
-              </AnalyzeProvider>
-            </Channel>
+          {/* Main panel */}
+          {activeVoiceCall && connectedVoiceChannel ? (
+            <VoiceChannelView channelName={connectedVoiceChannel.name} />
           ) : (
-            <NoChannelPlaceholder />
+            <div className="discord-chat-main">
+              {activeChannel ? (
+                <Channel channel={activeChannel} Attachment={CustomAttachment}>
+                  <AnalyzeProvider
+                    channelId={activeChannel.id}
+                    sentimentAnalysisEnabled={sentimentAnalysisEnabled}
+                  >
+                    <Window>
+                      <CustomChannelHeader />
+                      <MessageList Message={CustomMessage} />
+                      <MessageInput />
+                    </Window>
+                    <Thread />
+                  </AnalyzeProvider>
+                </Channel>
+              ) : (
+                <NoChannelPlaceholder />
+              )}
+            </div>
           )}
-        </div>
 
-        {isCreateChannelOpen && (
-          <CreateChannelModal
-            serverId={selectedServerId !== "dm" ? selectedServerId : undefined}
-            onClose={() => setIsCreateChannelOpen(false)}
-          />
-        )}
+          {isCreateChannelOpen && (
+            <CreateChannelModal
+              serverId={selectedServerId !== "dm" ? selectedServerId : undefined}
+              onClose={() => setIsCreateChannelOpen(false)}
+            />
+          )}
 
-        {isCreateServerOpen && (
-          <CreateServerModal
-            onClose={() => setIsCreateServerOpen(false)}
-            onServerCreated={handleServerCreated}
-            onServerJoined={handleServerJoined}
-          />
-        )}
+          {isCreateServerOpen && (
+            <CreateServerModal
+              onClose={() => setIsCreateServerOpen(false)}
+              onServerCreated={handleServerCreated}
+              onServerJoined={handleServerJoined}
+            />
+          )}
 
-        {showSettings && (
-          <UserSettingsModal onClose={() => setShowSettings(false)} />
-        )}
-      </FriendsProvider>
+          {showSettings && (
+            <UserSettingsModal onClose={() => setShowSettings(false)} />
+          )}
+        </FriendsProvider>
       </Chat>
     </div>
+  );
+
+  if (!videoClient) return appLayout;
+
+  return (
+    <StreamVideo client={videoClient}>
+      {activeVoiceCall ? (
+        <StreamCall call={activeVoiceCall}>
+          <VoiceParticipantTracker onParticipants={handleParticipants} onDisconnect={handleVoiceDisconnect} />
+          {appLayout}
+        </StreamCall>
+      ) : (
+        appLayout
+      )}
+    </StreamVideo>
   );
 };
 
