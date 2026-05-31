@@ -5,7 +5,7 @@ import { Channel } from "../models/channel.model.js";
 
 export const createServer = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { name, icon } = req.body;
 
     if (!name?.trim()) {
@@ -31,7 +31,7 @@ export const createServer = async (req, res) => {
 
 export const getMyServers = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const servers = await Server.find({ "members.userId": userId }).lean();
     return res.status(200).json({ servers });
   } catch (error) {
@@ -42,7 +42,7 @@ export const getMyServers = async (req, res) => {
 
 export const generateInviteCode = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { serverId } = req.params;
 
     const server = await Server.findOne({ serverId });
@@ -84,7 +84,7 @@ export const getInviteInfo = async (req, res) => {
 
 export const joinByInvite = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { code } = req.params;
 
     const server = await Server.findOne({ "inviteCodes.code": code });
@@ -96,7 +96,6 @@ export const joinByInvite = async (req, res) => {
       await server.save();
     }
 
-    // Add user to all Stream channels in this server
     const serverChannels = await streamClient.queryChannels(
       { serverId: { $eq: server.serverId } },
       {},
@@ -118,9 +117,8 @@ export const joinByInvite = async (req, res) => {
 
 export const migrateExistingChannels = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
 
-    // Idempotent: return existing if already migrated
     const existingServer = await Server.findOne({ name: "Ana Sunucu" }).lean();
     if (existingServer) {
       return res.status(200).json({ server: existingServer });
@@ -128,18 +126,14 @@ export const migrateExistingChannels = async (req, res) => {
 
     const serverId = crypto.randomUUID();
 
-    // Query all Stream channels the user is in that have a custom name
-    // (DM channels created via Stream's DM pattern won't have a name field)
     const allStreamChannels = await streamClient.queryChannels(
       { members: { $in: [userId] } },
       {},
       { limit: 200, state: false }
     );
 
-    // Server channels have a name; auto-generated DM channels don't
     const serverChannels = allStreamChannels.filter((ch) => ch.data?.name);
 
-    // Collect all unique member IDs across all server channels
     const memberIdSet = new Set([userId]);
     for (const ch of serverChannels) {
       const memberIds = Object.keys(ch.state?.members || {});
@@ -163,14 +157,12 @@ export const migrateExistingChannels = async (req, res) => {
       members,
     });
 
-    // Set serverId on all Stream server channels
     await Promise.all(
       serverChannels.map((ch) =>
         ch.updatePartial({ set: { serverId } }).catch(() => {})
       )
     );
 
-    // Upsert MongoDB Channel records for each
     await Promise.all(
       serverChannels.map((ch) =>
         Channel.updateOne(

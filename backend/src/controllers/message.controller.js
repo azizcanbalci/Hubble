@@ -117,7 +117,7 @@ const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 export const analyzeMessages = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { messages, channelId } = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -139,8 +139,6 @@ export const analyzeMessages = async (req, res) => {
         const data = await response.json();
         const result = data.results[0];
 
-        // Preserve the original Stream message id — ML API returns its own UUID
-        // which would overwrite ours if spread directly
         return {
           id,
           text: result.text,
@@ -151,7 +149,6 @@ export const analyzeMessages = async (req, res) => {
       })
     );
 
-    // Persist per-user sentiment results
     await SentimentResult.bulkWrite(
       results.map((r) => ({
         updateOne: {
@@ -181,8 +178,7 @@ export const analyzeMessages = async (req, res) => {
 
 export const getSentimentsForChannel = async (req, res) => {
   try {
-    const { userId } = req.auth();
-    const { channelId } = req.params;
+    const userId = req.userId;
 
     const sentiments = await SentimentResult.find({ userId })
       .select("streamMessageId sentiment emoji confidence")

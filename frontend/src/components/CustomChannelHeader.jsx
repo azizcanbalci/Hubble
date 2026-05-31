@@ -14,7 +14,7 @@ import {
   useChannelStateContext,
 } from "stream-chat-react";
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAppAuth } from "../context/AppAuthContext";
 import toast from "react-hot-toast";
 import MembersModal from "./MembersModal";
 import PinnedMessagesModal from "./PinnedMessagesModal";
@@ -26,7 +26,7 @@ import { useAnalyze } from "../context/AnalyzeContext";
 const CustomChannelHeader = () => {
   const { channel } = useChannelStateContext();
   const { jumpToMessage } = useChannelActionContext();
-  const { user } = useUser();
+  const { currentUser: user } = useAppAuth();
 
   const memberCount = Object.keys(channel.state.members).length;
 

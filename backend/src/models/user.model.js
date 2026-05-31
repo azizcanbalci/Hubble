@@ -13,12 +13,20 @@ const userSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      required: true,
+      default: "",
     },
     clerkId: {
       type: String,
-      required: true,
+      sparse: true,
       unique: true,
+    },
+    password: {
+      type: String,
+    },
+    authProvider: {
+      type: String,
+      enum: ["clerk", "local"],
+      default: "clerk",
     },
     settings: {
       sentimentAnalysisEnabled: { type: Boolean, default: true },

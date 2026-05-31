@@ -1,3 +1,4 @@
+import { isValidObjectId } from "mongoose";
 import { streamClient, getVideoClient } from "../config/stream.js";
 import { User } from "../models/user.model.js";
 import { MeetingAnalysis } from "../models/meeting-analysis.model.js";
@@ -5,7 +6,7 @@ import { MeetingAnalysis } from "../models/meeting-analysis.model.js";
 export const getCallRecordings = async (req, res) => {
   try {
     const { callId } = req.params;
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const channels = await streamClient.queryChannels(
       { id: { $eq: callId }, members: { $in: [userId] } },
@@ -30,11 +31,10 @@ export const analyzeRecording = async (req, res) => {
   try {
     const { callId } = req.params;
     const { url, meetingDate } = req.body;
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     if (!url) return res.status(400).json({ message: "url gerekli" });
 
-    // Verify membership and get member list
     const channels = await streamClient.queryChannels(
       { id: { $eq: callId }, members: { $in: [userId] } },
       {},
@@ -43,14 +43,18 @@ export const analyzeRecording = async (req, res) => {
     if (!channels.length) return res.status(403).json({ message: "Forbidden" });
 
     const memberIds = Object.keys(channels[0].state?.members ?? {});
-    const users = await User.find({ clerkId: { $in: memberIds } }).select("email");
-    const participants = users.map((u) => u.email);
 
-    // Check if already analyzed
+    const mongoIds = memberIds.filter((id) => isValidObjectId(id));
+    const clerkIds = memberIds.filter((id) => !isValidObjectId(id));
+    const [mongoUsers, clerkUsers] = await Promise.all([
+      mongoIds.length ? User.find({ _id: { $in: mongoIds } }).select("email") : [],
+      clerkIds.length ? User.find({ clerkId: { $in: clerkIds } }).select("email") : [],
+    ]);
+    const participants = [...mongoUsers, ...clerkUsers].map((u) => u.email);
+
     const existing = await MeetingAnalysis.findOne({ callId, recordingUrl: url });
     if (existing) return res.status(200).json(existing);
 
-    // Call external analysis service
     const analyzeRes = await fetch("http://127.0.0.1:8000/analyze-video", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,9 +88,8 @@ export const analyzeRecording = async (req, res) => {
 export const getCallAnalyses = async (req, res) => {
   try {
     const { callId } = req.params;
-    const { userId } = req.auth();
+    const userId = req.userId;
 
-    // Membership check
     const channels = await streamClient.queryChannels(
       { id: { $eq: callId }, members: { $in: [userId] } },
       {},
@@ -94,7 +97,6 @@ export const getCallAnalyses = async (req, res) => {
     );
     if (!channels.length) return res.status(403).json({ message: "Forbidden" });
 
-    // Return analyses without heavy segments array for listing
     const analyses = await MeetingAnalysis.find({ callId })
       .select("-segments")
       .sort({ createdAt: -1 });
@@ -109,12 +111,11 @@ export const getCallAnalyses = async (req, res) => {
 export const getAnalysisDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const analysis = await MeetingAnalysis.findById(id);
     if (!analysis) return res.status(404).json({ message: "Bulunamadı" });
 
-    // Membership check
     const channels = await streamClient.queryChannels(
       { id: { $eq: analysis.callId }, members: { $in: [userId] } },
       {},
@@ -131,10 +132,9 @@ export const getAnalysisDetail = async (req, res) => {
 
 export const getAllAnalyses = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { emotion, from, to, page = 1, limit = 20 } = req.query;
 
-    // Get all channels the user is a member of
     const channels = await streamClient.queryChannels(
       { members: { $in: [userId] } },
       {},
@@ -169,7 +169,7 @@ export const getAllAnalyses = async (req, res) => {
 
 export const getAnalysisStats = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const channels = await streamClient.queryChannels(
       { members: { $in: [userId] } },
@@ -208,7 +208,7 @@ export const getAnalysisStats = async (req, res) => {
         confidenceCount++;
       }
       const date = a.meetingDate || a.createdAt;
-      const month = new Date(date).toISOString().slice(0, 7); // "2026-05"
+      const month = new Date(date).toISOString().slice(0, 7);
       monthMap[month] = (monthMap[month] || 0) + 1;
     }
 

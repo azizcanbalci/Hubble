@@ -1,13 +1,26 @@
+import { isValidObjectId } from "mongoose";
 import { Friendship } from "../models/friendship.model.js";
 import { Block } from "../models/block.model.js";
 import { User } from "../models/user.model.js";
 
 /* ── helpers ──────────────────────────────────────────────────── */
 
-const populateUsers = async (clerkIds) => {
-  const users = await User.find({ clerkId: { $in: clerkIds } }, "clerkId name image email").lean();
+const populateUsers = async (userIds) => {
+  const mongoIds = userIds.filter((id) => isValidObjectId(id));
+  const clerkIds = userIds.filter((id) => !isValidObjectId(id));
+
+  const [byObjectId, byClerkId] = await Promise.all([
+    mongoIds.length
+      ? User.find({ _id: { $in: mongoIds } }, "name image email").lean()
+      : [],
+    clerkIds.length
+      ? User.find({ clerkId: { $in: clerkIds } }, "clerkId name image email").lean()
+      : [],
+  ]);
+
   const map = {};
-  for (const u of users) map[u.clerkId] = u;
+  for (const u of byObjectId) map[u._id.toString()] = u;
+  for (const u of byClerkId) map[u.clerkId] = u;
   return map;
 };
 
@@ -15,14 +28,13 @@ const populateUsers = async (clerkIds) => {
 
 export const sendFriendRequest = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { targetId } = req.params;
 
     if (userId === targetId) {
       return res.status(400).json({ message: "Kendinize istek gönderemezsiniz" });
     }
 
-    // Block check (either direction)
     const block = await Block.findOne({
       $or: [
         { blockerId: userId, blockedId: targetId },
@@ -46,7 +58,7 @@ export const sendFriendRequest = async (req, res) => {
 
 export const acceptFriendRequest = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { id } = req.params;
 
     const friendship = await Friendship.findOne({ _id: id, receiverId: userId, status: "pending" });
@@ -65,7 +77,7 @@ export const acceptFriendRequest = async (req, res) => {
 
 export const rejectFriendRequest = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { id } = req.params;
 
     await Friendship.deleteOne({ _id: id, receiverId: userId, status: "pending" });
@@ -78,7 +90,7 @@ export const rejectFriendRequest = async (req, res) => {
 
 export const cancelFriendRequest = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { id } = req.params;
 
     await Friendship.deleteOne({ _id: id, senderId: userId, status: "pending" });
@@ -91,7 +103,7 @@ export const cancelFriendRequest = async (req, res) => {
 
 export const removeFriend = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { id } = req.params;
 
     await Friendship.deleteOne({
@@ -110,14 +122,13 @@ export const removeFriend = async (req, res) => {
 
 export const blockUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { targetId } = req.params;
 
     if (userId === targetId) {
       return res.status(400).json({ message: "Kendinizi engelleyemezsiniz" });
     }
 
-    // Remove any existing friendship (either direction)
     await Friendship.deleteOne({
       $or: [
         { senderId: userId, receiverId: targetId },
@@ -138,7 +149,7 @@ export const blockUser = async (req, res) => {
 
 export const unblockUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
     const { targetId } = req.params;
 
     await Block.deleteOne({ blockerId: userId, blockedId: targetId });
@@ -153,7 +164,7 @@ export const unblockUser = async (req, res) => {
 
 export const getFriends = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const friendships = await Friendship.find({
       status: "accepted",
@@ -187,7 +198,7 @@ export const getFriends = async (req, res) => {
 
 export const getPendingRequests = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const [incomingRaw, outgoingRaw] = await Promise.all([
       Friendship.find({ receiverId: userId, status: "pending" }).lean(),
@@ -219,7 +230,7 @@ export const getPendingRequests = async (req, res) => {
 
 export const getBlockedUsers = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const userId = req.userId;
 
     const blocks = await Block.find({ blockerId: userId }).lean();
     const blockedIds = blocks.map((b) => b.blockedId);

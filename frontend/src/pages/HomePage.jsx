@@ -1,4 +1,5 @@
-import { UserButton, useUser } from "@clerk/clerk-react";
+import { UserButton, useClerk } from "@clerk/clerk-react";
+import { useAppAuth } from "../context/AppAuthContext";
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,7 +58,8 @@ const HomePage = () => {
   const migrationAttempted = useRef(false);
 
   const queryClient = useQueryClient();
-  const { user } = useUser();
+  const { currentUser: user, isCustomSignedIn, logoutCustom } = useAppAuth();
+  const { signOut: clerkSignOut } = useClerk();
   const { chatClient, error, isLoading } = useStreamChat();
 
   const { data: settingsData } = useQuery({
@@ -286,7 +288,35 @@ const HomePage = () => {
             >
               <SettingsIcon className="size-5" />
             </button>
-            <UserButton />
+            {isCustomSignedIn ? (
+              <button
+                onClick={logoutCustom}
+                title="Çıkış Yap"
+                style={{
+                  width: "2rem",
+                  height: "2rem",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #7209b7, #533483)",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "white",
+                  fontSize: "0.75rem",
+                  fontWeight: "700",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+              >
+                {user?.image ? (
+                  <img src={user.image} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  (user?.name?.[0] || "?").toUpperCase()
+                )}
+              </button>
+            ) : (
+              <UserButton />
+            )}
           </div>
         </div>
 
