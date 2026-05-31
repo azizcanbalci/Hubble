@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { XIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { getUserSettings, updateUserSettings } from "../lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 
 const UserSettingsModal = ({ onClose }) => {
   const queryClient = useQueryClient();
@@ -31,37 +39,36 @@ const UserSettingsModal = ({ onClose }) => {
   };
 
   return (
-    <div className="settings-modal-overlay" onClick={onClose}>
-      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-modal__header">
-          <h3>Kullanıcı Ayarları</h3>
-          <button className="settings-modal__close" onClick={onClose}>
-            <XIcon className="size-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Kullanıcı Ayarları</DialogTitle>
+        </DialogHeader>
 
-        <div className="settings-modal__body">
-          <p className="settings-modal__section-title">Özellikler</p>
+        <Separator />
 
-          <div className="settings-row">
-            <div className="settings-row__info">
-              <p className="settings-row__title">Duygu Analizi</p>
-              <p className="settings-row__desc">
+        <div className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#949ba4]">Özellikler</p>
+
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="sentiment-toggle" className="text-sm font-medium text-[#f2f3f5] normal-case tracking-normal">
+                Duygu Analizi
+              </Label>
+              <p className="text-xs text-[#949ba4]">
                 Mesajların yanında duygu analizi rozetlerini göster ve Analyze butonunu etkinleştir
               </p>
             </div>
-            <button
-              className={`settings-toggle ${sentimentEnabled ? "settings-toggle--on" : "settings-toggle--off"}`}
-              onClick={handleToggle}
+            <Switch
+              id="sentiment-toggle"
+              checked={sentimentEnabled}
+              onCheckedChange={handleToggle}
               disabled={isSaving}
-              aria-label="Duygu analizini aç/kapat"
-            >
-              <span className="settings-toggle__thumb" />
-            </button>
+            />
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

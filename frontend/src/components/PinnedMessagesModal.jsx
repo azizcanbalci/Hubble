@@ -1,38 +1,52 @@
-import { XIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 function PinnedMessagesModal({ pinnedMessages, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-2xl font-semibold">Pinned Messages</h2>
-          <button onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-700">
-            <XIcon className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Sabitlenmiş Mesajlar</DialogTitle>
+        </DialogHeader>
 
-        {/* MESSAGES LIST */}
-        <div className="px-6 py-4 max-h-96 overflow-y-auto">
-          {pinnedMessages.map((msg) => (
-            <div key={msg.id} className="flex items-start gap-3 py-4 border-b last:border-b-0">
-              <img
-                src={msg.user.image}
-                alt={msg.user.name}
-                className="w-9 h-9 rounded-full object-cover mt-1"
-              />
-
-              <div className="text-sm font-medium text-gray-700 mb-1">{msg.user.name}</div>
-              <div className="text-base text-gray-900 whitespace-pre-line">{msg.text}</div>
+        <ScrollArea className="max-h-96 pr-3">
+          {pinnedMessages.length === 0 ? (
+            <p className="text-center text-sm text-[#949ba4] py-8">
+              Sabitlenmiş mesaj yok
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {pinnedMessages.map((msg, index) => (
+                <div key={msg.id}>
+                  <div className="flex items-start gap-3 py-3 px-1">
+                    <Avatar className="size-9 shrink-0 mt-0.5">
+                      <AvatarImage src={msg.user.image} alt={msg.user.name} />
+                      <AvatarFallback className="text-xs">
+                        {(msg.user.name || "?").charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1 min-w-0">
+                      <p className="text-sm font-medium text-[#f2f3f5]">{msg.user.name}</p>
+                      <p className="text-sm text-[#dcddde] whitespace-pre-line break-words">
+                        {msg.text}
+                      </p>
+                    </div>
+                  </div>
+                  {index < pinnedMessages.length - 1 && <Separator />}
+                </div>
+              ))}
             </div>
-          ))}
-
-          {pinnedMessages.length === 0 && (
-            <div className="text-center text-gray-500 py-8">No pinned messages</div>
           )}
-        </div>
-      </div>
-    </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
 

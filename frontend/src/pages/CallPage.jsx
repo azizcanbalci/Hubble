@@ -34,7 +34,13 @@ import {
 } from "lucide-react";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
-import "../styles/call-page.css";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -82,9 +88,7 @@ const CallPage = () => {
     };
 
     initCall();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [tokenData, user, callId]);
 
   if (isConnecting || !isLoaded) {
@@ -115,6 +119,24 @@ const CallPage = () => {
   );
 };
 
+/* ─── Control button helper ──────────────────────────────────── */
+const CtrlBtn = ({ label, tooltip, onClick, variant = "secondary", disabled, children, className }) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant={variant}
+        onClick={onClick}
+        disabled={disabled}
+        className={`flex-col gap-1 h-16 min-w-[66px] rounded-xl ${className || ""}`}
+      >
+        {children}
+        <span className="text-[10px] font-medium leading-none">{label}</span>
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>{tooltip}</TooltipContent>
+  </Tooltip>
+);
+
 /* ─── Main call UI ───────────────────────────────────────────── */
 const CallContent = () => {
   const call = useCall();
@@ -141,28 +163,20 @@ const CallContent = () => {
   const isRecording = useIsCallRecordingInProgress();
   const isScreenSharing = !isScreenShareOff;
 
-  /* navigate away when call ends — must be in useEffect, not render */
   useEffect(() => {
-    if (callingState === CallingState.LEFT) {
-      navigate("/");
-    }
+    if (callingState === CallingState.LEFT) navigate("/");
   }, [callingState, navigate]);
 
-  /* fullscreen listener */
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  /* pin logic */
   const pinned = pinnedId ? participants.find((p) => p.sessionId === pinnedId) : null;
   const others = pinnedId ? participants.filter((p) => p.sessionId !== pinnedId) : [];
+  const togglePin = (sessionId) => setPinnedId((prev) => (prev === sessionId ? null : sessionId));
 
-  const togglePin = (sessionId) =>
-    setPinnedId((prev) => (prev === sessionId ? null : sessionId));
-
-  /* fullscreen */
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
@@ -171,7 +185,6 @@ const CallContent = () => {
     }
   };
 
-  /* recording */
   const handleRecord = async () => {
     setRecordLoading(true);
     try {
@@ -189,7 +202,6 @@ const CallContent = () => {
     }
   };
 
-  /* screen share */
   const handleScreenShare = async () => {
     try {
       await screenShare.toggle();
@@ -198,140 +210,129 @@ const CallContent = () => {
     }
   };
 
-  /* grid class by count */
   const gridClass = pinnedId
     ? "dc-grid dc-grid--pinned"
     : `dc-grid dc-grid--${Math.min(participants.length, 9)}`;
 
   return (
-    <div className="dc-call" ref={containerRef}>
-      {/* ── video area ── */}
-      <div className="dc-video-area">
-        <StreamTheme>
-          {pinnedId ? (
-            /* ── pinned mode ── */
-            <div className={gridClass}>
-              <div className="dc-tile dc-tile--main" onClick={() => togglePin(pinnedId)}>
-                {pinned && <ParticipantView participant={pinned} />}
-                <div className="dc-tile__unpin-hint">
-                  <PinIcon className="size-3.5" /> Sabitlemeyi kaldır
-                </div>
-              </div>
-              {others.length > 0 && (
-                <div className="dc-sidebar">
-                  {others.map((p) => (
-                    <div
-                      key={p.sessionId}
-                      className="dc-tile dc-tile--thumb"
-                      onClick={() => togglePin(p.sessionId)}
-                      title="Büyütmek için tıkla"
-                    >
-                      <ParticipantView participant={p} />
-                      <div className="dc-tile__pin-hint">
-                        <PinIcon className="size-3" /> Sabitle
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* ── grid mode ── */
-            <div className={gridClass}>
-              {participants.map((p) => (
-                <div
-                  key={p.sessionId}
-                  className="dc-tile"
-                  onClick={() => togglePin(p.sessionId)}
-                  title="Büyütmek için tıkla"
-                >
-                  <ParticipantView participant={p} />
-                  <div className="dc-tile__pin-hint">
-                    <PinIcon className="size-3" /> Sabitle
+    <TooltipProvider delayDuration={200}>
+      <div className="dc-call" ref={containerRef}>
+        {/* ── video area ── */}
+        <div className="dc-video-area">
+          <StreamTheme>
+            {pinnedId ? (
+              <div className={gridClass}>
+                <div className="dc-tile dc-tile--main" onClick={() => togglePin(pinnedId)}>
+                  {pinned && <ParticipantView participant={pinned} />}
+                  <div className="dc-tile__unpin-hint">
+                    <PinIcon className="size-3.5" /> Sabitlemeyi kaldır
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </StreamTheme>
+                {others.length > 0 && (
+                  <div className="dc-sidebar">
+                    {others.map((p) => (
+                      <div
+                        key={p.sessionId}
+                        className="dc-tile dc-tile--thumb"
+                        onClick={() => togglePin(p.sessionId)}
+                      >
+                        <ParticipantView participant={p} />
+                        <div className="dc-tile__pin-hint">
+                          <PinIcon className="size-3" /> Sabitle
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={gridClass}>
+                {participants.map((p) => (
+                  <div
+                    key={p.sessionId}
+                    className="dc-tile"
+                    onClick={() => togglePin(p.sessionId)}
+                  >
+                    <ParticipantView participant={p} />
+                    <div className="dc-tile__pin-hint">
+                      <PinIcon className="size-3" /> Sabitle
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </StreamTheme>
+        </div>
+
+        {/* ── control bar ── */}
+        <div className="dc-bar">
+          <CtrlBtn
+            label={isMicMuted ? "Sesi Aç" : "Sessiz"}
+            tooltip={isMicMuted ? "Sesi Aç" : "Sesi Kapat"}
+            onClick={() => microphone.toggle()}
+            variant={isMicMuted ? "destructive" : "secondary"}
+          >
+            {isMicMuted ? <MicOffIcon className="size-5" /> : <MicIcon className="size-5" />}
+          </CtrlBtn>
+
+          <CtrlBtn
+            label={isCamMuted ? "Kamera Aç" : "Kamerayı Kapat"}
+            tooltip={isCamMuted ? "Kamerayı Aç" : "Kamerayı Kapat"}
+            onClick={() => camera.toggle()}
+            variant={isCamMuted ? "destructive" : "secondary"}
+          >
+            {isCamMuted ? <VideoOffIcon className="size-5" /> : <VideoIcon className="size-5" />}
+          </CtrlBtn>
+
+          <CtrlBtn
+            label={isScreenSharing ? "Paylaşımı Durdur" : "Ekran Paylaş"}
+            tooltip={isScreenSharing ? "Paylaşımı Durdur" : "Ekranı Paylaş"}
+            onClick={handleScreenShare}
+            variant={isScreenSharing ? "default" : "secondary"}
+            className={isScreenSharing ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+          >
+            {isScreenSharing ? <MonitorOffIcon className="size-5" /> : <MonitorIcon className="size-5" />}
+          </CtrlBtn>
+
+          <div className="dc-bar__divider" />
+
+          <CtrlBtn
+            label={isRecording ? "Kaydı Durdur" : "Kayıt"}
+            tooltip={isRecording ? "Kaydı Durdur" : "Kayıt Başlat"}
+            onClick={handleRecord}
+            disabled={recordLoading}
+            variant={isRecording ? "destructive" : "secondary"}
+            className={isRecording ? "animate-pulse" : ""}
+          >
+            {recordLoading
+              ? <LoaderIcon className="size-5 animate-spin" />
+              : isRecording
+                ? <SquareIcon className="size-5" />
+                : <CircleIcon className="size-5" />}
+          </CtrlBtn>
+
+          <CtrlBtn
+            label={isFullscreen ? "Küçült" : "Tam Ekran"}
+            tooltip={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran"}
+            onClick={toggleFullscreen}
+            variant="secondary"
+          >
+            {isFullscreen ? <Minimize2Icon className="size-5" /> : <Maximize2Icon className="size-5" />}
+          </CtrlBtn>
+
+          <div className="dc-bar__divider" />
+
+          <CtrlBtn
+            label="Ayrıl"
+            tooltip="Görüşmeden Ayrıl"
+            onClick={() => call.leave()}
+            variant="destructive"
+          >
+            <PhoneOffIcon className="size-5" />
+          </CtrlBtn>
+        </div>
       </div>
-
-      {/* ── control bar ── */}
-      <div className="dc-bar">
-        {/* mic */}
-        <button
-          className={`dc-btn ${isMicMuted ? "dc-btn--danger" : ""}`}
-          onClick={() => microphone.toggle()}
-          title={isMicMuted ? "Sesi Aç" : "Sesi Kapat"}
-        >
-          {isMicMuted ? <MicOffIcon className="dc-btn__icon" /> : <MicIcon className="dc-btn__icon" />}
-          <span className="dc-btn__label">{isMicMuted ? "Sesi Aç" : "Sessiz"}</span>
-        </button>
-
-        {/* camera */}
-        <button
-          className={`dc-btn ${isCamMuted ? "dc-btn--danger" : ""}`}
-          onClick={() => camera.toggle()}
-          title={isCamMuted ? "Kamerayı Aç" : "Kamerayı Kapat"}
-        >
-          {isCamMuted ? <VideoOffIcon className="dc-btn__icon" /> : <VideoIcon className="dc-btn__icon" />}
-          <span className="dc-btn__label">{isCamMuted ? "Kamera Aç" : "Kamerayı Kapat"}</span>
-        </button>
-
-        {/* screen share */}
-        <button
-          className={`dc-btn ${isScreenSharing ? "dc-btn--active" : ""}`}
-          onClick={handleScreenShare}
-          title={isScreenSharing ? "Paylaşımı Durdur" : "Ekranı Paylaş"}
-        >
-          {isScreenSharing
-            ? <MonitorOffIcon className="dc-btn__icon" />
-            : <MonitorIcon className="dc-btn__icon" />}
-          <span className="dc-btn__label">{isScreenSharing ? "Paylaşımı Durdur" : "Ekran Paylaş"}</span>
-        </button>
-
-        <div className="dc-bar__divider" />
-
-        {/* record */}
-        <button
-          className={`dc-btn ${isRecording ? "dc-btn--recording" : ""}`}
-          onClick={handleRecord}
-          disabled={recordLoading}
-          title={isRecording ? "Kaydı Durdur" : "Kayıt Başlat"}
-        >
-          {recordLoading
-            ? <LoaderIcon className="dc-btn__icon animate-spin" />
-            : isRecording
-              ? <SquareIcon className="dc-btn__icon" />
-              : <CircleIcon className="dc-btn__icon" />}
-          <span className="dc-btn__label">{isRecording ? "Kaydı Durdur" : "Kayıt"}</span>
-        </button>
-
-        {/* fullscreen */}
-        <button
-          className="dc-btn"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? "Tam Ekrandan Çık" : "Tam Ekran"}
-        >
-          {isFullscreen
-            ? <Minimize2Icon className="dc-btn__icon" />
-            : <Maximize2Icon className="dc-btn__icon" />}
-          <span className="dc-btn__label">{isFullscreen ? "Küçült" : "Tam Ekran"}</span>
-        </button>
-
-        <div className="dc-bar__divider" />
-
-        {/* leave */}
-        <button
-          className="dc-btn dc-btn--leave"
-          onClick={() => call.leave()}
-          title="Görüşmeden Ayrıl"
-        >
-          <PhoneOffIcon className="dc-btn__icon" />
-          <span className="dc-btn__label">Ayrıl</span>
-        </button>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

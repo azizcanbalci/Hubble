@@ -11,7 +11,9 @@ import {
   AlertCircleIcon,
   SparklesIcon,
 } from "lucide-react";
-import "../styles/stream-chat-theme.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formatDate = (iso) => {
   if (!iso) return "—";
@@ -174,94 +176,94 @@ const AnalysesPage = () => {
 
   const analyses = listData?.analyses ?? [];
   const stats = statsData ?? {};
-
   const uniqueEmotions = [...new Set(analyses.map((a) => a.overall_emotion).filter(Boolean))];
 
   return (
     <div className="analyses-page">
       {/* Header */}
       <div className="analyses-header">
-        <button className="analyses-back-btn" onClick={() => navigate("/")}>
+        <Button variant="ghost" size="sm" className="gap-2 text-[#949ba4] hover:text-[#dcddde]" onClick={() => navigate("/")}>
           <ArrowLeftIcon className="size-4" />
           Geri
-        </button>
+        </Button>
         <div className="analyses-header__title">
           <BarChart2Icon className="size-5" />
           <h1>Toplantı Analizleri</h1>
         </div>
-        <button className="analyses-back-btn" onClick={() => refetch()} title="Yenile">
+        <Button variant="ghost" size="icon" className="size-8 text-[#949ba4] hover:text-[#dcddde]" onClick={() => refetch()} title="Yenile">
           <RefreshCwIcon className="size-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="analyses-content">
         {/* Stats Bar */}
         {!statsLoading && (
           <div className="analyses-stats-bar">
-            <div className="analyses-stat-card">
-              <span className="analyses-stat-card__value">{stats.totalMeetings ?? 0}</span>
-              <span className="analyses-stat-card__label">Toplam Analiz</span>
-            </div>
-            <div className="analyses-stat-card">
-              <span className="analyses-stat-card__value">{stats.totalSpeakers ?? 0}</span>
-              <span className="analyses-stat-card__label">Toplam Konuşmacı</span>
-            </div>
-            <div className="analyses-stat-card">
-              <span className="analyses-stat-card__value">
-                {stats.mostCommonEmotion ?? "—"}
-              </span>
-              <span className="analyses-stat-card__label">En Sık Duygu</span>
-            </div>
-            <div className="analyses-stat-card">
-              <span className="analyses-stat-card__value">
-                {stats.avgFacialConfidence ? `%${Math.round(stats.avgFacialConfidence * 100)}` : "—"}
-              </span>
-              <span className="analyses-stat-card__label">Ort. Yüz Güveni</span>
-            </div>
+            {[
+              { value: stats.totalMeetings ?? 0, label: "Toplam Analiz" },
+              { value: stats.totalSpeakers ?? 0, label: "Toplam Konuşmacı" },
+              { value: stats.mostCommonEmotion ?? "—", label: "En Sık Duygu" },
+              {
+                value: stats.avgFacialConfidence ? `%${Math.round(stats.avgFacialConfidence * 100)}` : "—",
+                label: "Ort. Yüz Güveni",
+              },
+            ].map(({ value, label }) => (
+              <Card key={label} className="flex-1 bg-[#2b2d31] border-white/5">
+                <CardContent className="p-5">
+                  <p className="text-2xl font-bold text-[#f2f3f5]">{value}</p>
+                  <p className="text-xs text-[#949ba4] uppercase tracking-wide mt-0.5">{label}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
 
         {/* Emotion Distribution + Monthly */}
         {stats.emotionBreakdown && Object.keys(stats.emotionBreakdown).length > 0 && (
           <div className="analyses-charts-row">
-            <div className="analyses-chart-card">
-              <p className="analyses-chart-card__title">Duygu Dağılımı</p>
-              <EmotionBarChart breakdown={stats.emotionBreakdown} />
-            </div>
+            <Card className="flex-1 bg-[#2b2d31] border-white/5">
+              <CardContent className="p-5">
+                <p className="analyses-chart-card__title">Duygu Dağılımı</p>
+                <EmotionBarChart breakdown={stats.emotionBreakdown} />
+              </CardContent>
+            </Card>
             {stats.byMonth?.length > 0 && (
-              <div className="analyses-chart-card">
-                <p className="analyses-chart-card__title">Aylık Toplantı Sayısı</p>
-                <div className="emotion-bar-chart">
-                  {stats.byMonth.map(({ month, count }) => {
-                    const max = Math.max(...stats.byMonth.map((m) => m.count));
-                    return (
-                      <div key={month} className="emotion-bar-row">
-                        <span className="emotion-bar-row__label">{month}</span>
-                        <div className="emotion-bar-row__track">
-                          <div className="emotion-bar__fill" style={{ width: `${Math.round((count / max) * 100)}%` }} />
+              <Card className="flex-1 bg-[#2b2d31] border-white/5">
+                <CardContent className="p-5">
+                  <p className="analyses-chart-card__title">Aylık Toplantı Sayısı</p>
+                  <div className="emotion-bar-chart">
+                    {stats.byMonth.map(({ month, count }) => {
+                      const max = Math.max(...stats.byMonth.map((m) => m.count));
+                      return (
+                        <div key={month} className="emotion-bar-row">
+                          <span className="emotion-bar-row__label">{month}</span>
+                          <div className="emotion-bar-row__track">
+                            <div className="emotion-bar__fill" style={{ width: `${Math.round((count / max) * 100)}%` }} />
+                          </div>
+                          <span className="emotion-bar-row__count">{count}</span>
                         </div>
-                        <span className="emotion-bar-row__count">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
 
         {/* Filter Bar */}
         <div className="analyses-filter-bar">
-          <select
-            className="analyses-filter-select"
-            value={emotionFilter}
-            onChange={(e) => setEmotionFilter(e.target.value)}
-          >
-            <option value="">Tüm Duygular</option>
-            {uniqueEmotions.map((e) => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
+          <Select value={emotionFilter || "__all__"} onValueChange={(v) => setEmotionFilter(v === "__all__" ? "" : v)}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Tüm Duygular" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tüm Duygular</SelectItem>
+              {uniqueEmotions.map((e) => (
+                <SelectItem key={e} value={e}>{e}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <input
             type="date"
             className="analyses-filter-input"
@@ -278,12 +280,14 @@ const AnalysesPage = () => {
             title="Bitiş tarihi"
           />
           {(emotionFilter || fromDate || toDate) && (
-            <button
-              className="analyses-filter-clear"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#949ba4] hover:text-[#dcddde]"
               onClick={() => { setEmotionFilter(""); setFromDate(""); setToDate(""); }}
             >
               Temizle
-            </button>
+            </Button>
           )}
         </div>
 
@@ -316,8 +320,9 @@ const AnalysesPage = () => {
               const isExpanded = expandedId === a._id;
               return (
                 <div key={a._id} className={`analyses-item ${isExpanded ? "analyses-item--expanded" : ""}`}>
-                  <button
-                    className="analyses-item__row"
+                  <Button
+                    variant="ghost"
+                    className="analyses-item__row w-full h-auto py-3.5 px-4 justify-start rounded-none"
                     onClick={() => setExpandedId(isExpanded ? null : a._id)}
                   >
                     <span className="analyses-item__emoji">{a.overall_emoji || "📊"}</span>
@@ -332,8 +337,10 @@ const AnalysesPage = () => {
                       <span>·</span>
                       <span className="analyses-item__emotion">{a.overall_emotion || "—"}</span>
                     </div>
-                    {isExpanded ? <ChevronUpIcon className="size-4 analyses-item__chevron" /> : <ChevronDownIcon className="size-4 analyses-item__chevron" />}
-                  </button>
+                    {isExpanded
+                      ? <ChevronUpIcon className="size-4 analyses-item__chevron" />
+                      : <ChevronDownIcon className="size-4 analyses-item__chevron" />}
+                  </Button>
 
                   {isExpanded && <ExpandedDetail id={a._id} preloaded={a} />}
                 </div>

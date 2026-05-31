@@ -1,46 +1,43 @@
-import { XIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 function MembersModal({ members, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-2xl font-semibold">Channel Members</h2>
-          <button onClick={onClose} className="text-2xl text-gray-500 hover:text-gray-700">
-            <XIcon className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Kanal Üyeleri</DialogTitle>
+        </DialogHeader>
 
-        {/* MEMBERS LIST */}
-        <div className="px-6 py-4 max-h-96 overflow-y-auto">
-          {members.map((member) => (
-            <div
-              key={member.user.id}
-              className="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0"
-            >
-              {member.user?.image ? (
-                <img
-                  src={member.user.image}
-                  alt={member.user.name}
-                  className="size-9 rounded-full object-cover"
-                />
-              ) : (
-                <div className="size-9 rounded-full bg-gray-400 flex items-center justify-center">
-                  <span className="text-white">
-                    {(member.user.name || member.user.id).charAt(0).toUpperCase()}
+        <ScrollArea className="h-80 pr-3">
+          <div className="space-y-1">
+            {members.map((member, index) => (
+              <div key={member.user.id}>
+                <div className="flex items-center gap-3 py-2.5 px-1">
+                  <Avatar className="size-9">
+                    <AvatarImage src={member.user.image} alt={member.user.name} />
+                    <AvatarFallback>
+                      {(member.user.name || member.user.id).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-[#f2f3f5]">
+                    {member.user.name || member.user.id}
                   </span>
                 </div>
-              )}
-
-              <div className="text-sm font-medium text-gray-700 mb-1">
-                {member.user.name || member.user.id}
+                {index < members.length - 1 && <Separator />}
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
 

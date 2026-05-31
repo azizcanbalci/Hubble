@@ -267,54 +267,6 @@
   margin: 0 4px;
 }
 
-/* ── Buttons ──────────────────────────────────────────────────── */
-.dc-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-width: 66px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: #383a40;
-  border: none;
-  color: #dbdee1;
-  cursor: pointer;
-  transition: background 0.12s ease, transform 0.08s ease;
-  user-select: none;
-}
-
-.dc-btn:hover:not(:disabled) {
-  background: #4e5058;
-  transform: translateY(-1px);
-}
-.dc-btn:active:not(:disabled) { transform: translateY(0); }
-.dc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.dc-btn__icon { width: 20px; height: 20px; }
-
-.dc-btn__label {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-}
-
-.dc-btn--danger { background: #f23f43; color: #fff; }
-.dc-btn--danger:hover:not(:disabled) { background: #d03032; }
-
-.dc-btn--active { background: #23a55a; color: #fff; }
-.dc-btn--active:hover:not(:disabled) { background: #1a8a48; }
-
-.dc-btn--recording {
-  background: #f23f43;
-  color: #fff;
-  animation: dc-pulse-ring 1.6s ease infinite;
-}
-
-.dc-btn--leave { background: #f23f43; color: #fff; }
-.dc-btn--leave:hover:not(:disabled) { background: #d03032; }
 
 /* ── Animations ───────────────────────────────────────────────── */
 @keyframes dc-pulse {

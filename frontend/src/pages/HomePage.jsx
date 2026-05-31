@@ -24,8 +24,16 @@ import {
   Window,
 } from "stream-chat-react";
 
-import "../styles/stream-chat-theme.css";
-import { ChevronDownIcon, PlusIcon, SettingsIcon, LinkIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  PlusIcon,
+  SettingsIcon,
+  LinkIcon,
+  HashIcon,
+  SunIcon,
+  MoonIcon,
+  MessageSquareIcon,
+} from "lucide-react";
 import CreateChannelModal from "../components/CreateChannelModal";
 import CreateServerModal from "../components/CreateServerModal";
 import ServerSidebar from "../components/ServerSidebar";
@@ -38,6 +46,7 @@ import UserSettingsModal from "../components/UserSettingsModal";
 import { AnalyzeProvider } from "../context/AnalyzeContext";
 import { FriendsProvider } from "../context/FriendsContext";
 import FriendsList from "../components/FriendsList";
+import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 
 const CustomAttachment = (props) => {
@@ -47,6 +56,71 @@ const CustomAttachment = (props) => {
   }
   return <Attachment {...props} />;
 };
+
+const NoChannelPlaceholder = () => (
+  <div
+    className="flex flex-1 flex-col items-center justify-center gap-8 select-none"
+    style={{ background: "var(--ds-chat-bg)" }}
+  >
+    <div className="relative">
+      <div
+        className="flex h-28 w-28 items-center justify-center rounded-[28px]"
+        style={{ background: "var(--ds-sidebar-bg)", border: "1px solid var(--ds-border)" }}
+      >
+        <HashIcon
+          className="h-14 w-14"
+          strokeWidth={1.5}
+          style={{ color: "var(--ds-text-muted)" }}
+        />
+      </div>
+      <div
+        className="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full shadow-lg"
+        style={{ background: "var(--ds-accent)" }}
+      >
+        <MessageSquareIcon className="h-4 w-4 text-white" />
+      </div>
+    </div>
+
+    <div className="text-center max-w-xs px-4">
+      <h2
+        className="mb-2 text-xl font-bold"
+        style={{ color: "var(--ds-text-active)" }}
+      >
+        Henüz bir sohbet seçilmedi
+      </h2>
+      <p
+        className="text-sm leading-relaxed"
+        style={{ color: "var(--ds-text-muted)" }}
+      >
+        Sol panelden bir kanal veya arkadaş seçerek sohbete başlayabilirsiniz
+      </p>
+    </div>
+
+    <div
+      className="flex items-center gap-2 rounded-lg px-4 py-2 text-xs"
+      style={{
+        background: "var(--ds-sidebar-bg)",
+        color: "var(--ds-text-muted)",
+        border: "1px solid var(--ds-border)",
+      }}
+    >
+      <kbd
+        style={{
+          background: "var(--ds-input-bg)",
+          color: "var(--ds-text-normal)",
+          borderRadius: 4,
+          padding: "1px 6px",
+          fontSize: 11,
+          fontFamily: "monospace",
+          border: "1px solid var(--ds-border)",
+        }}
+      >
+        Ctrl+K
+      </kbd>
+      <span>ile kanal arayabilirsiniz</span>
+    </div>
+  </div>
+);
 
 const HomePage = () => {
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
@@ -61,6 +135,7 @@ const HomePage = () => {
   const { currentUser: user, isCustomSignedIn, logoutCustom } = useAppAuth();
   const { signOut: clerkSignOut } = useClerk();
   const { chatClient, error, isLoading } = useStreamChat();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const { data: settingsData } = useQuery({
     queryKey: ["userSettings"],
@@ -279,8 +354,21 @@ const HomePage = () => {
             )}
           </div>
 
-          {/* Bottom bar: settings + avatar */}
+          {/* Bottom bar: theme toggle + settings + avatar */}
           <div className="discord-channel-sidebar__bottom">
+            {/* Theme toggle */}
+            <button
+              className="discord-server-icon discord-server-icon--settings"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Açık Mod" : "Koyu Mod"}
+            >
+              {theme === "dark" ? (
+                <SunIcon className="size-4" />
+              ) : (
+                <MoonIcon className="size-4" />
+              )}
+            </button>
+
             <button
               className="discord-server-icon discord-server-icon--settings"
               onClick={() => setShowSettings(true)}
@@ -288,6 +376,7 @@ const HomePage = () => {
             >
               <SettingsIcon className="size-5" />
             </button>
+
             {isCustomSignedIn ? (
               <button
                 onClick={logoutCustom}
@@ -322,19 +411,23 @@ const HomePage = () => {
 
         {/* Main Chat */}
         <div className="discord-chat-main">
-          <Channel channel={activeChannel} Attachment={CustomAttachment}>
-            <AnalyzeProvider
-              channelId={activeChannel?.id}
-              sentimentAnalysisEnabled={sentimentAnalysisEnabled}
-            >
-              <Window>
-                <CustomChannelHeader />
-                <MessageList Message={CustomMessage} />
-                <MessageInput />
-              </Window>
-              <Thread />
-            </AnalyzeProvider>
-          </Channel>
+          {activeChannel ? (
+            <Channel channel={activeChannel} Attachment={CustomAttachment}>
+              <AnalyzeProvider
+                channelId={activeChannel.id}
+                sentimentAnalysisEnabled={sentimentAnalysisEnabled}
+              >
+                <Window>
+                  <CustomChannelHeader />
+                  <MessageList Message={CustomMessage} />
+                  <MessageInput />
+                </Window>
+                <Thread />
+              </AnalyzeProvider>
+            </Channel>
+          ) : (
+            <NoChannelPlaceholder />
+          )}
         </div>
 
         {isCreateChannelOpen && (
