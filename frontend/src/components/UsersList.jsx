@@ -102,7 +102,9 @@ const UsersList = ({ activeChannel }) => {
             </span>
 
             {unreadCount > 0 && (
-              <span className="discord-unread-badge">{unreadCount}</span>
+              <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 text-[10px] font-bold rounded-full bg-[#f23f43] text-white">
+                {unreadCount}
+              </span>
             )}
           </button>
         );

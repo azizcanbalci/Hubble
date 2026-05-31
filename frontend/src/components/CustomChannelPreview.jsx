@@ -1,4 +1,5 @@
 import { HashIcon, LockIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const CustomChannelPreview = ({ channel, setActiveChannel, activeChannel }) => {
   const isActive = activeChannel && activeChannel.id === channel.id;
@@ -20,7 +21,12 @@ const CustomChannelPreview = ({ channel, setActiveChannel, activeChannel }) => {
       )}
       <span className="flex-1 truncate text-left">{channel.data.id}</span>
       {unreadCount > 0 && (
-        <span className="discord-unread-badge">{unreadCount}</span>
+        <Badge
+          variant="destructive"
+          className="h-4 min-w-4 px-1 text-[10px] font-bold rounded-full"
+        >
+          {unreadCount}
+        </Badge>
       )}
     </button>
   );

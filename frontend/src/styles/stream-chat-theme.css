@@ -13,11 +13,170 @@
   --ds-hover-bg:         rgba(255,255,255,0.06);
   --ds-active-bg:        rgba(255,255,255,0.1);
   --ds-separator:        rgba(0,0,0,0.24);
+  --ds-border:           rgba(255,255,255,0.1);
   --ds-accent:           #7c3aed;
   --ds-accent-hover:     #6d28d9;
   --ds-online:           #23a55a;
   --ds-offline:          #80848e;
   --ds-danger:           #f23f43;
+}
+
+/* ─── Light mode overrides ──────────────────────────────────────── */
+[data-theme="light"] {
+  --ds-server-bg:        #e3e5e8;
+  --ds-sidebar-bg:       #f2f3f5;
+  --ds-chat-bg:          #ffffff;
+  --ds-input-bg:         #ebedef;
+  --ds-text-normal:      #2e3338;
+  --ds-text-muted:       #5d6370;
+  --ds-text-active:      #060607;
+  --ds-interactive:      #4e5058;
+  --ds-hover-bg:         rgba(0,0,0,0.04);
+  --ds-active-bg:        rgba(124,58,237,0.15);
+  --ds-separator:        rgba(0,0,0,0.08);
+  --ds-border:           rgba(0,0,0,0.12);
+  --ds-accent:           #7c3aed;
+  --ds-accent-hover:     #6d28d9;
+  --ds-online:           #23a55a;
+  --ds-offline:          #80848e;
+  --ds-danger:           #f23f43;
+}
+
+/* Light mode — Stream Chat message overrides */
+[data-theme="light"] .discord-chat-main .str-chat__message-bubble,
+[data-theme="light"] .discord-chat-main .str-chat__message-simple .str-chat__message-bubble {
+  background: #f0f1f5 !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message--me .str-chat__message-bubble {
+  background: #e5e7f0 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message-text-inner,
+[data-theme="light"] .discord-chat-main .str-chat__message-text,
+[data-theme="light"] .discord-chat-main .str-chat__message-text p,
+[data-theme="light"] .discord-chat-main .str-chat__message-text span,
+[data-theme="light"] .discord-chat-main .str-chat__message-bubble p,
+[data-theme="light"] .discord-chat-main .str-chat__message-bubble span {
+  color: #2e3338 !important;
+  background: transparent !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message-simple-name,
+[data-theme="light"] .discord-chat-main .str-chat__message-sender-name,
+[data-theme="light"] .discord-chat-main .str-chat__message-name,
+[data-theme="light"] .discord-chat-main [class*="str-chat__message"][class*="name"] {
+  color: #060607 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message-simple-timestamp,
+[data-theme="light"] .discord-chat-main .str-chat__message-metadata,
+[data-theme="light"] .discord-chat-main .str-chat__message-metadata time {
+  color: #5d6370 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message:hover,
+[data-theme="light"] .discord-chat-main .str-chat__message-simple:hover {
+  background: rgba(0,0,0,0.03) !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__reaction-list button,
+[data-theme="light"] .discord-chat-main .str-chat__message-reactions-list-item {
+  background: rgba(0,0,0,0.05) !important;
+  color: #2e3338 !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message--deleted .str-chat__message-text,
+[data-theme="light"] .discord-chat-main .str-chat__message--system {
+  color: #5d6370 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__date-separator-text {
+  color: #5d6370;
+  background: #ffffff;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__date-separator-line {
+  background: rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message-actions-box {
+  background: #f2f3f5;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__thread,
+[data-theme="light"] .discord-chat-main .str-chat__thread-list,
+[data-theme="light"] .discord-chat-main .str-chat__thread-header {
+  background: #f2f3f5 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__thread-header {
+  color: #2e3338;
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__base-input {
+  color: #2e3338 !important;
+  caret-color: #2e3338;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__base-input::placeholder {
+  color: #5d6370 !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__message-input-inner,
+[data-theme="light"] .discord-chat-main .str-chat__input-flat-wrapper {
+  background: #ebedef !important;
+}
+
+[data-theme="light"] .discord-chat-main .str-chat__list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+}
+
+/* Light mode — server sidebar icons */
+[data-theme="light"] .discord-server-icon--server {
+  background: #d5d8de;
+  color: #2e3338;
+}
+
+[data-theme="light"] .discord-server-icon--add {
+  background: rgba(0,0,0,0.08);
+  color: #3ba55c;
+}
+
+/* Light mode — page backgrounds */
+[data-theme="light"] .invite-page {
+  background: #f2f3f5;
+}
+
+[data-theme="light"] .analyses-page {
+  background: #f2f3f5;
+}
+
+[data-theme="light"] .analyses-header {
+  background: #ffffff;
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .analyses-header__title {
+  color: #060607;
+}
+
+/* Light mode — video call card */
+[data-theme="light"] .video-call-card {
+  background: #f0f1f5;
+  border-color: rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .video-call-card__title {
+  color: #060607;
+}
+
+[data-theme="light"] .video-call-card__subtitle {
+  color: #5d6370;
 }
 
 /* ─── Base reset ────────────────────────────────────────────────── */
@@ -326,6 +485,17 @@ html, body {
   flex-shrink: 0;
 }
 
+/* ─── Stream Chat SDK CSS variable overrides (dark theme) ──────── */
+.discord-chat-main {
+  --str-chat__background-color: var(--ds-chat-bg);
+  --str-chat__secondary-background-color: var(--ds-sidebar-bg);
+  --str-chat__channel-list-background-color: var(--ds-sidebar-bg);
+  --str-chat__message-bubble-color: var(--ds-sidebar-bg);
+  --str-chat__font-color: var(--ds-text-normal);
+  --str-chat__secondary-font-color: var(--ds-text-muted);
+  --str-chat__message-textarea-background-color: var(--ds-input-bg);
+}
+
 /* ─── Main chat area ────────────────────────────────────────────── */
 .discord-chat-main {
   flex: 1;
@@ -546,6 +716,48 @@ html, body {
   color: var(--ds-text-muted) !important;
 }
 
+/* ─── Empty channel / no-messages state ─────────────────────────── */
+
+/* Stream Chat v2 empty state classes */
+.discord-chat-main .str-chat__list--empty,
+.discord-chat-main .str-chat__channel-list--empty,
+.discord-chat-main .str-chat__empty-channel,
+.discord-chat-main .str-chat__main-panel-inner,
+.discord-chat-main .str-chat__empty-channel-text,
+.discord-chat-main .str-chat__channel .str-chat__list,
+.discord-chat-main [class*="EmptyStateIndicator"],
+.discord-chat-main [class*="empty-state"],
+.discord-chat-main [class*="str-chat"][class*="empty"] {
+  background: var(--ds-chat-bg) !important;
+  color: var(--ds-text-muted) !important;
+}
+
+/* Force all direct children of the chat channel to be dark */
+.discord-chat-main .str-chat__channel > * {
+  background: var(--ds-chat-bg) !important;
+}
+
+/* Any stray white surfaces inside the main panel */
+.discord-chat-main .str-chat__main-panel,
+.discord-chat-main .str-chat__main-panel-inner {
+  background: var(--ds-chat-bg) !important;
+}
+
+/* Empty channel list messenger */
+.discord-chat-main .str-chat__channel-list-messenger__main {
+  background: var(--ds-chat-bg) !important;
+  color: var(--ds-text-muted) !important;
+}
+
+/* Text inside empty states */
+.discord-chat-main .str-chat__empty-channel-text,
+.discord-chat-main [class*="str-chat__channel-list-empty"] p,
+.discord-chat-main [class*="str-chat__channel-list-empty"] span,
+.discord-chat-main [class*="str-chat__empty"] p,
+.discord-chat-main [class*="str-chat__empty"] span {
+  color: var(--ds-text-muted) !important;
+}
+
 /* ─── Scrollbar inside message list ────────────────────────────── */
 .discord-chat-main .str-chat__list::-webkit-scrollbar { width: 8px; }
 .discord-chat-main .str-chat__list::-webkit-scrollbar-track { background: transparent; }
@@ -611,69 +823,7 @@ html, body {
 
 .video-call-card__join-btn:hover { background: #1a8a48; }
 
-/* ─── Create Channel Modal ──────────────────────────────────────── */
-.create-channel-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.create-channel-modal {
-  background: #2b2d31;
-  border-radius: 8px;
-  width: 460px;
-  max-width: 90vw;
-  max-height: 85vh;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-
-.create-channel-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--ds-separator);
-}
-
-.create-channel-modal__header h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ds-text-active);
-  margin: 0;
-}
-
-.create-channel-modal__close {
-  background: none;
-  border: none;
-  color: var(--ds-text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.1s;
-}
-
-.create-channel-modal__close:hover { color: var(--ds-text-active); }
-
-.create-channel-modal__form {
-  padding: 16px 24px 24px;
-  max-height: calc(85vh - 100px);
-  overflow-y: auto;
-}
-
-.create-channel-modal__form::-webkit-scrollbar { width: 4px; }
-.create-channel-modal__form::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-}
+/* ─── Channel/Server Modal Form Helpers ─────────────────────────── */
 
 .form-group { margin: 16px 0; }
 
@@ -771,33 +921,6 @@ html, body {
 .radio-title { font-weight: 600; color: var(--ds-text-normal); font-size: 15px; margin-bottom: 4px; }
 .radio-description { color: var(--ds-text-muted); font-size: 13px; line-height: 1.4; }
 
-.create-channel-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--ds-separator);
-}
-
-/* ─── Shared buttons ────────────────────────────────────────────── */
-.btn {
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  border: none;
-  transition: background 0.1s, opacity 0.1s;
-}
-
-.btn-primary { background: var(--ds-accent); color: white; padding: 6px 12px; }
-.btn-primary:hover:not(:disabled) { background: var(--ds-accent-hover); }
-.btn-primary:disabled { background: rgba(124,58,237,0.4); color: rgba(255,255,255,0.5); cursor: not-allowed; }
-
-.btn-secondary { background: rgba(255,255,255,0.08); color: var(--ds-text-normal); }
-.btn-secondary:hover { background: rgba(255,255,255,0.12); }
-.btn-small { padding: 6px 12px; font-size: 13px; }
 
 /* ─── Member selection ──────────────────────────────────────────── */
 .member-selection-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -965,124 +1088,6 @@ html, body {
   border-radius: 16px;
 }
 
-/* ─── User Settings Modal ───────────────────────────────────────── */
-.settings-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.settings-modal {
-  background: #2b2d31;
-  border-radius: 8px;
-  width: 420px;
-  max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.settings-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--ds-separator);
-}
-
-.settings-modal__header h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ds-text-active);
-  margin: 0;
-}
-
-.settings-modal__close {
-  background: none;
-  border: none;
-  color: var(--ds-text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s;
-}
-
-.settings-modal__close:hover { color: var(--ds-text-active); }
-
-.settings-modal__body {
-  padding: 20px 24px 24px;
-}
-
-.settings-modal__section-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ds-text-muted);
-  margin: 0 0 12px;
-}
-
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-}
-
-.settings-row__info { flex: 1; }
-
-.settings-row__title {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ds-text-active);
-  margin: 0 0 4px;
-}
-
-.settings-row__desc {
-  font-size: 13px;
-  color: var(--ds-text-muted);
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Toggle switch */
-.settings-toggle {
-  flex-shrink: 0;
-  width: 44px;
-  height: 24px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  transition: background 0.2s;
-  padding: 0;
-}
-
-.settings-toggle--on { background: var(--ds-accent); }
-.settings-toggle--off { background: rgba(255, 255, 255, 0.15); }
-.settings-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.settings-toggle__thumb {
-  position: absolute;
-  top: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: white;
-  transition: left 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.settings-toggle--on .settings-toggle__thumb { left: 23px; }
-.settings-toggle--off .settings-toggle__thumb { left: 3px; }
 
 /* ─── Server Sidebar — new icon variants ───────────────────────── */
 .discord-server-icon--dm,
@@ -1139,39 +1144,6 @@ html, body {
   flex-shrink: 0;
 }
 
-/* ─── Create Server Modal — tab switcher ────────────────────────── */
-.create-server-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--ds-separator);
-  margin: 0 -24px;
-  padding: 0 24px;
-}
-
-.create-server-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  background: none;
-  border: none;
-  color: var(--ds-text-muted);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s;
-  white-space: nowrap;
-}
-
-.create-server-tab--active {
-  color: var(--ds-text-active);
-  border-bottom-color: #5865f2;
-}
-
-.create-server-tab:hover:not(.create-server-tab--active) {
-  color: var(--ds-text-normal);
-}
 
 /* ─── Invite Page ────────────────────────────────────────────────── */
 .invite-page {
@@ -1183,79 +1155,6 @@ html, body {
   padding: 16px;
 }
 
-.invite-card {
-  background: #2b2d31;
-  border-radius: 16px;
-  padding: 40px 48px;
-  text-align: center;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.invite-server-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 24px;
-  background: #5865f2;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.invite-server-icon__emoji { font-size: 36px; }
-.invite-server-icon__initials { font-size: 28px; font-weight: 700; color: #fff; }
-
-.invite-subtitle {
-  font-size: 12px;
-  color: var(--ds-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 6px;
-}
-
-.invite-server-name {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--ds-text-active);
-  margin: 0 0 14px;
-}
-
-.invite-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ds-text-muted);
-  font-size: 14px;
-  margin-bottom: 28px;
-}
-
-.invite-join-btn { width: 100%; margin-bottom: 12px; }
-
-.invite-cancel {
-  background: none;
-  border: none;
-  color: var(--ds-text-muted);
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.invite-cancel:hover { text-decoration: underline; color: var(--ds-text-normal); }
-
-.invite-loading { color: var(--ds-text-muted); margin-top: 12px; }
-
-.invite-error-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ds-text-active);
-  margin: 0 0 8px;
-}
-
-.invite-error-desc { color: var(--ds-text-muted); margin-bottom: 20px; }
 
 /* ─── Recordings Panel ───────────────────────────────────────────── */
 .rec-panel {
