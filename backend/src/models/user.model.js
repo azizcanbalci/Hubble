@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema(
     },
     settings: {
       sentimentAnalysisEnabled: { type: Boolean, default: true },
+      desktopNotifications:     { type: Boolean, default: true },
+      soundEnabled:             { type: Boolean, default: true },
+      allowFriendRequests:      { type: Boolean, default: true },
+      showOnlineStatus:         { type: Boolean, default: true },
     },
   },
   { timestamps: true }

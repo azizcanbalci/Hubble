@@ -45,6 +45,13 @@ export const sendFriendRequest = async (req, res) => {
       return res.status(403).json({ message: "Bu kullanıcıya istek gönderilemiyor" });
     }
 
+    const target = await User.findOne(
+      isValidObjectId(targetId) ? { _id: targetId } : { clerkId: targetId }
+    ).select("settings");
+    if (target?.settings?.allowFriendRequests === false) {
+      return res.status(403).json({ message: "Bu kullanıcı arkadaşlık isteklerini kapalı tutmuş" });
+    }
+
     await Friendship.create({ senderId: userId, receiverId: targetId });
     return res.status(201).json({ message: "Arkadaşlık isteği gönderildi" });
   } catch (error) {

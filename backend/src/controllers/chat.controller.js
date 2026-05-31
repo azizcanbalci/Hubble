@@ -32,9 +32,15 @@ export const updateUserSettings = async (req, res) => {
   try {
     const { settings } = req.body;
 
+    // Dot notation to avoid overwriting unrelated settings fields
+    const updateDoc = {};
+    for (const [key, value] of Object.entries(settings)) {
+      updateDoc[`settings.${key}`] = value;
+    }
+
     const user = await User.findOneAndUpdate(
       userFilter(req.userId),
-      { $set: { settings } },
+      { $set: updateDoc },
       { new: true }
     ).select("settings");
 

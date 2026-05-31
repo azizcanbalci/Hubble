@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router";
 import { useChatContext } from "stream-chat-react";
 import * as Sentry from "@sentry/react";
 import toast from "react-hot-toast";
-import { AlertCircleIcon, HashIcon, LockIcon, UsersIcon } from "lucide-react";
+import { AlertCircleIcon, HashIcon, LockIcon, UsersIcon, Volume2Icon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,8 +51,11 @@ const CreateChannelModal = ({ onClose, serverId }) => {
   }, [client]);
 
   useEffect(() => {
-    if (channelType === "public") setSelectedMembers(users.map((u) => u.id));
-    else setSelectedMembers([]);
+    if (channelType === "public" || channelType === "voice") {
+      setSelectedMembers(users.map((u) => u.id));
+    } else {
+      setSelectedMembers([]);
+    }
   }, [channelType, users]);
 
   const validateChannelName = (name) => {
@@ -102,6 +105,7 @@ const CreateChannelModal = ({ onClose, serverId }) => {
         channelData.visibility = "public";
         channelData.discoverable = true;
       }
+      if (channelType === "voice") channelData.channelType = "voice";
       if (serverId) channelData.serverId = serverId;
 
       const channel = client.channel("messaging", channelId, channelData);
@@ -136,7 +140,11 @@ const CreateChannelModal = ({ onClose, serverId }) => {
           <div className="space-y-2">
             <Label htmlFor="channelName">Kanal Adı</Label>
             <div className="relative">
-              <HashIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#949ba4]" />
+              {channelType === "voice" ? (
+                <Volume2Icon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#949ba4]" />
+              ) : (
+                <HashIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#949ba4]" />
+              )}
               <Input
                 id="channelName"
                 type="text"
@@ -165,6 +173,7 @@ const CreateChannelModal = ({ onClose, serverId }) => {
               {[
                 { value: "public", icon: <HashIcon className="size-4" />, title: "Herkese Açık", desc: "Herkes bu kanala katılabilir" },
                 { value: "private", icon: <LockIcon className="size-4" />, title: "Özel", desc: "Sadece davet edilen üyeler katılabilir" },
+                { value: "voice", icon: <Volume2Icon className="size-4" />, title: "Ses Kanalı", desc: "Kalıcı sesli sohbet kanalı" },
               ].map(({ value, icon, title, desc }) => (
                 <label
                   key={value}
@@ -191,7 +200,7 @@ const CreateChannelModal = ({ onClose, serverId }) => {
             </div>
           </div>
 
-          {/* Members (private only) */}
+          {/* Members (private only — for voice/public, all members are auto-added) */}
           {channelType === "private" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">

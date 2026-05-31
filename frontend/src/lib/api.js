@@ -52,6 +52,11 @@ export async function updateUserSettings(settings) {
   return response.data;
 }
 
+export async function updateProfile(name, image) {
+  const response = await axiosInstance.patch("/auth/profile", { name, image });
+  return response.data;
+}
+
 export async function getCallRecordings(callId) {
   const response = await axiosInstance.get(`/video/recordings/${callId}`);
   return response.data;
