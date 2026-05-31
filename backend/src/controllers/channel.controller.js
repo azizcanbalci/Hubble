@@ -23,7 +23,7 @@ export const createChannel = async (req, res) => {
       return res.status(400).json({ message: "Channel slug could not be generated" });
     }
 
-    const memberIds = Array.from(new Set([req.auth().userId, ...members].filter(Boolean)));
+    const memberIds = Array.from(new Set([req.userId, ...members].filter(Boolean)));
 
     const channel = await Channel.create({
       name: name.trim(),
@@ -31,7 +31,7 @@ export const createChannel = async (req, res) => {
       category: category.trim().toLowerCase() || "general",
       type,
       description,
-      createdBy: req.auth().userId,
+      createdBy: req.userId,
       members: memberIds,
     });
 
@@ -48,7 +48,7 @@ export const createChannel = async (req, res) => {
 export const getMyChannels = async (req, res) => {
   try {
     const channels = await Channel.find({
-      members: req.auth().userId,
+      members: req.userId,
       archivedAt: null,
     })
       .sort({ updatedAt: -1 })

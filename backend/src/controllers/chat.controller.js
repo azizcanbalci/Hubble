@@ -1,9 +1,13 @@
+import { isValidObjectId } from "mongoose";
 import { generateStreamToken } from "../config/stream.js";
 import { User } from "../models/user.model.js";
 
+const userFilter = (userId) =>
+  isValidObjectId(userId) ? { _id: userId } : { clerkId: userId };
+
 export const getStreamToken = async (req, res) => {
   try {
-    const token = generateStreamToken(req.auth().userId);
+    const token = generateStreamToken(req.userId);
     res.status(200).json({ token });
   } catch (error) {
     console.log("Error generating Stream token:", error);
@@ -15,8 +19,7 @@ export const getStreamToken = async (req, res) => {
 
 export const getUserSettings = async (req, res) => {
   try {
-    const { userId } = req.auth();
-    const user = await User.findOne({ clerkId: userId }).select("settings").lean();
+    const user = await User.findOne(userFilter(req.userId)).select("settings").lean();
     const settings = user?.settings ?? { sentimentAnalysisEnabled: true };
     return res.status(200).json({ settings });
   } catch (error) {
@@ -27,11 +30,10 @@ export const getUserSettings = async (req, res) => {
 
 export const updateUserSettings = async (req, res) => {
   try {
-    const { userId } = req.auth();
     const { settings } = req.body;
 
     const user = await User.findOneAndUpdate(
-      { clerkId: userId },
+      userFilter(req.userId),
       { $set: { settings } },
       { new: true }
     ).select("settings");

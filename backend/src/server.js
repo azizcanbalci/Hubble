@@ -12,6 +12,7 @@ import messageRoutes, { streamWebhookRouter } from "./routes/message.route.js";
 import videoRoutes from "./routes/video.route.js";
 import serverRoutes from "./routes/server.route.js";
 import friendRoutes from "./routes/friend.route.js";
+import authRoutes from "./routes/auth.route.js";
 
 import cors from "cors";
 
@@ -32,6 +33,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
+app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/messages", messageRoutes);

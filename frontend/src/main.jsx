@@ -18,6 +18,7 @@ import * as Sentry from "@sentry/react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AuthProvider from "./providers/AuthProvider.jsx";
+import { AppAuthProvider } from "./context/AppAuthContext.jsx";
 
 const queryClient = new QueryClient();
 
@@ -46,12 +47,14 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
       <BrowserRouter>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-          <Toaster position="top-right" />
-        </QueryClientProvider>
+        <AppAuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+            <Toaster position="top-right" />
+          </QueryClientProvider>
+        </AppAuthProvider>
       </BrowserRouter>
     </ClerkProvider>
   </StrictMode>

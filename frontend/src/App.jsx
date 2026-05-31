@@ -1,18 +1,19 @@
-import { useAuth } from "@clerk/clerk-react";
 import { Navigate, Route, Routes } from "react-router";
+import { useAppAuth } from "./context/AppAuthContext";
 
 import AuthPage from "./pages/AuthPage";
 import CallPage from "./pages/CallPage";
 import HomePage from "./pages/HomePage";
 import InvitePage from "./pages/InvitePage";
 import AnalysesPage from "./pages/AnalysesPage";
+import SSOCallbackPage from "./pages/SSOCallbackPage";
 
 import * as Sentry from "@sentry/react";
 
 const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 const App = () => {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAppAuth();
 
   if (!isLoaded) return null;
 
@@ -20,6 +21,7 @@ const App = () => {
     <SentryRoutes>
       <Route path="/" element={isSignedIn ? <HomePage /> : <Navigate to={"/auth"} replace />} />
       <Route path="/auth" element={!isSignedIn ? <AuthPage /> : <Navigate to={"/"} replace />} />
+      <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
       <Route
         path="/call/:id"
@@ -45,22 +47,3 @@ const App = () => {
 };
 
 export default App;
-
-// first version of routing:
-// return (
-//   <>
-//     <SignedIn>
-//       <SentryRoutes>
-//         <Route path="/" element={<HomePage />} />
-//         <Route path="/auth" element={<Navigate to={"/"} replace />} />
-//       </SentryRoutes>
-//     </SignedIn>
-
-//     <SignedOut>
-//       <SentryRoutes>
-//         <Route path="/auth" element={<AuthPage />} />
-//         <Route path="*" element={<Navigate to={"/auth"} replace />} />
-//       </SentryRoutes>
-//     </SignedOut>
-//   </>
-// );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useUser } from "@clerk/clerk-react";
+import { useAppAuth } from "../context/AppAuthContext";
 import toast from "react-hot-toast";
 
 import { getStreamToken } from "../lib/api";
@@ -41,7 +41,7 @@ const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 /* ─── Page shell ─────────────────────────────────────────────── */
 const CallPage = () => {
   const { id: callId } = useParams();
-  const { user, isLoaded } = useUser();
+  const { currentUser: user, isLoaded } = useAppAuth();
   const [client, setClient] = useState(null);
   const [call, setCall] = useState(null);
   const [isConnecting, setIsConnecting] = useState(true);
@@ -62,7 +62,7 @@ const CallPage = () => {
       try {
         videoClient = new StreamVideoClient({
           apiKey: STREAM_API_KEY,
-          user: { id: user.id, name: user.fullName, image: user.imageUrl },
+          user: { id: user.id, name: user.name, image: user.image },
           token: tokenData.token,
         });
         const callInstance = videoClient.call("default", callId);
