@@ -55,7 +55,7 @@ export const analyzeRecording = async (req, res) => {
     const existing = await MeetingAnalysis.findOne({ callId, recordingUrl: url });
     if (existing) return res.status(200).json(existing);
 
-    const analyzeRes = await fetch("http://127.0.0.1:8000/analyze-video", {
+    const analyzeRes = await fetch(`${process.env.ML_API_URL}/analyze-video`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, participants }),

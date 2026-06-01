@@ -40,6 +40,12 @@ const CustomMessage = () => {
         >
           <span className="sentiment-badge__emoji">{sentiment.emoji}</span>
           <span className="sentiment-badge__label">{sentiment.sentiment}</span>
+          {sentiment.polarity && (
+            <>
+              <span className="sentiment-badge__sep">·</span>
+              <span className="sentiment-badge__polarity">{sentiment.polarity}</span>
+            </>
+          )}
         </div>
       )}
     </div>

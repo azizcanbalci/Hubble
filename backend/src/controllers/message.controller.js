@@ -145,6 +145,7 @@ export const analyzeMessages = async (req, res) => {
           sentiment: result.sentiment,
           emoji: result.emoji,
           confidence: result.confidence,
+          polarity: result.polarity,
         };
       })
     );
@@ -162,6 +163,7 @@ export const analyzeMessages = async (req, res) => {
               sentiment: r.sentiment,
               emoji: r.emoji,
               confidence: r.confidence,
+              polarity: r.polarity,
             },
           },
           upsert: true,
