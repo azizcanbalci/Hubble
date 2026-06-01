@@ -19,7 +19,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "inngest": "^3.40.1",
+    "inngest": "^4.5.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.16.5",
     "stream-chat": "^8.60.0"
