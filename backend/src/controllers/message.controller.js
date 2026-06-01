@@ -183,7 +183,7 @@ export const getSentimentsForChannel = async (req, res) => {
     const userId = req.userId;
 
     const sentiments = await SentimentResult.find({ userId })
-      .select("streamMessageId sentiment emoji confidence")
+      .select("streamMessageId sentiment emoji confidence polarity")
       .lean();
 
     return res.status(200).json({ sentiments });
