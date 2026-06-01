@@ -74,6 +74,8 @@ INNGEST_EVENT_KEY=inngest_event_key
 INNGEST_SIGNING_KEY=inngest_signing_key
 
 CLIENT_URL=http://localhost:5173
+
+ML_API_URL=http://127.0.0.1:8000
 ```
 
 ### Frontend (`/frontend/.env`)

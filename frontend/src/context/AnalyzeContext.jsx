@@ -66,6 +66,7 @@ export const AnalyzeProvider = ({ children, channelId, sentimentAnalysisEnabled 
             sentiment: r.sentiment,
             emoji: r.emoji,
             confidence: r.confidence,
+            polarity: r.polarity,
           };
         });
         return { sentiments: Object.values(map) };

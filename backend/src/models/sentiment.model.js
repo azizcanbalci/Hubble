@@ -9,6 +9,7 @@ const sentimentResultSchema = new mongoose.Schema(
     sentiment: String,
     emoji: String,
     confidence: Number,
+    polarity: String,
   },
   { timestamps: true }
 );
