@@ -8,6 +8,7 @@ const segmentSchema = new mongoose.Schema({
   sentiment: String,
   emoji: String,
   confidence: Number,
+  polarity: String,
 }, { _id: false });
 
 const speakerSummarySchema = new mongoose.Schema({

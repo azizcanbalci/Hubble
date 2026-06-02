@@ -2228,3 +2228,8 @@ html, body {
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+.analyses-segment__polarity {
+  font-weight: 600;
+  color: var(--ds-text-muted);
+}

@@ -139,7 +139,10 @@ const ExpandedDetail = ({ id, preloaded }) => {
                 <span className="analyses-segment__time">{formatSeconds(seg.start_sec)}</span>
                 <span className="analyses-segment__speaker">{seg.speaker_id}</span>
                 <span className="analyses-segment__text">{seg.text}</span>
-                <span className="analyses-segment__badge">{seg.emoji} {seg.sentiment}</span>
+                <span className="analyses-segment__badge">
+                  {seg.emoji} {seg.sentiment}
+                  {seg.polarity && <span className="analyses-segment__polarity"> · {seg.polarity}</span>}
+                </span>
               </div>
             ))}
           </div>

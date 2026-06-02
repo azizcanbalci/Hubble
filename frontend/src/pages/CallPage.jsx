@@ -56,12 +56,14 @@ const CallPage = () => {
     queryKey: ["streamToken"],
     queryFn: getStreamToken,
     enabled: !!user,
+    staleTime: Infinity,
   });
 
   useEffect(() => {
     if (!tokenData?.token || !user || !callId) return;
 
     let videoClient = null;
+    let callInstance = null;
     let isMounted = true;
 
     const initCall = async () => {
@@ -71,10 +73,11 @@ const CallPage = () => {
           user: { id: user.id, name: user.name, image: user.image },
           token: tokenData.token,
         });
-        const callInstance = videoClient.call("default", callId);
+        callInstance = videoClient.call("default", callId);
         await callInstance.join({ create: true });
         if (!isMounted) {
-          await callInstance.leave();
+          await callInstance.leave().catch(() => {});
+          await videoClient.disconnectUser().catch(() => {});
           return;
         }
         setClient(videoClient);
@@ -88,8 +91,12 @@ const CallPage = () => {
     };
 
     initCall();
-    return () => { isMounted = false; };
-  }, [tokenData, user, callId]);
+    return () => {
+      isMounted = false;
+      callInstance?.leave().catch(() => {});
+      videoClient?.disconnectUser().catch(() => {});
+    };
+  }, [tokenData?.token, user?.id, callId]);
 
   if (isConnecting || !isLoaded) {
     return (
